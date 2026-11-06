@@ -13,7 +13,7 @@
         "changelog": "设置页改为 Jellyfin 控制台内部页面（不再接管整页）；分类规则新增「参与分类的媒体库」选择；适配 Jellyfin 12.4 授权方式。",
         "targetAbi": "10.9.0.0",
         "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/jellyfin-109/dist/Jellyfin.Plugin.CollectionStudio-1.1.0.0-net8.0.zip",
-        "checksum": "89b07b21b441671211ffeb4ad4a92298",
+        "checksum": "5f28d3dc7d918ff01be49f0586ff73ce",
         "timestamp": "2026-11-07T00:00:00Z"
       },
       {
@@ -21,7 +21,7 @@
         "changelog": "",
         "targetAbi": "10.9.0.0",
         "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/jellyfin-109/dist/Jellyfin.Plugin.CollectionStudio-1.0.0.0-net8.0.zip",
-        "checksum": "27eee4b917758c3670812c1672cdadae",
+        "checksum": "de6ed72db769ea2f25a39909fd32a00c",
         "timestamp": "2026-11-07T00:00:00Z"
       }
     ]
