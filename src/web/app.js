@@ -23,7 +23,7 @@
   }
 
   function $(id) {
-    var scope = connectedRoot();
+    var scope = connectedRoot() || document.querySelector('.cs-page, .cs-app') || document.body;
     if (scope) {
       var inScope = scope.querySelector('[id="' + id + '"]');
       if (inScope) { return inScope; }
@@ -2141,6 +2141,7 @@
   function allRoots() {
     var roots = [];
     var items = document.querySelectorAll('.cs-nav-item');
+    if (!items.length) { return rootScope ? [rootScope] : []; }
     for (var i = 0; i < items.length; i++) {
       var r = pageRootOf(items[i]);
       if (r && roots.indexOf(r) < 0) { roots.push(r); }
@@ -2154,7 +2155,7 @@
     var fresh = el ? pageRootOf(el) : null;
     if (fresh && fresh.isConnected) { rootScope = fresh; }
     var scope = connectedRoot();
-    if (!scope) { scope = document.querySelector('.cs-app'); if (scope) { rootScope = scope; } }
+    if (!scope) { scope = document.querySelector('.cs-page, .cs-app'); if (scope) { rootScope = scope; } }
     if (!scope) { return false; }
     var roots = allRoots();
     for (var i = 0; i < roots.length; i++) {
@@ -2166,16 +2167,18 @@
   }
 
   function init() {
+    // 页面根节点是 .cs-page（旧版用 .cs-app，这里两种都认）
     var claim = function () {
-      var apps = document.querySelectorAll('.cs-app');
-      for (var i = 0; i < apps.length; i++) {
-        if (!apps[i].getAttribute('data-cs-root')) { return apps[i]; }
+      var roots = document.querySelectorAll('.cs-page, .cs-app');
+      for (var i = 0; i < roots.length; i++) {
+        if (!roots[i].getAttribute('data-cs-root')) { return roots[i]; }
       }
-      return apps.length ? apps[apps.length - 1] : null;
+      return roots.length ? roots[roots.length - 1] : null;
     };
     rootScope = (document.currentScript && pageRootOf(document.currentScript)) || claim();
 
-    if (rootScope) { rootScope.setAttribute('data-cs-root', '1'); } else { return; }
+    if (rootScope) { rootScope.setAttribute('data-cs-root', '1'); }
+    // 即使没能认领到根节点，也要继续绑定，否则整页都点不动
     var navHost = rootScope || document;
     Array.prototype.forEach.call(navHost.querySelectorAll('.cs-nav-item'), function (btn) {
       var tab = btn.getAttribute('data-tab');

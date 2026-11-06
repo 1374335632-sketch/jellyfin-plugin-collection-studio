@@ -12,7 +12,8 @@ const tfm = process.argv[2] || 'net9.0';
 const pluginId = 'c7d1a2b4-9e53-4f18-8a2c-6b3d5e7f9041';
 const name = 'Jellyfin.Plugin.CollectionStudio';
 const targetAbi = tfm === 'net8.0' ? '10.9.0.0' : (tfm === 'net9.0' ? '10.11.0.0' : '12.4.0.0');
-const version = tfm === 'net8.0' ? '1.1.0.0' : (tfm === 'net9.0' ? '1.1.0.1' : '1.1.0.2');
+// 默认各产品线当前版本；可用第 3 个参数显式指定（重建历史版本包时用）
+const version = process.argv[3] || (tfm === 'net8.0' ? '1.1.0.0' : (tfm === 'net9.0' ? '1.1.0.1' : '1.1.0.2'));
 
 const outDir = join(srcDir, '_out-' + tfm);
 const stage = join(root, 'dist', 'stage-' + tfm);
