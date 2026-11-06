@@ -11,7 +11,7 @@ Jellyfin 插件：按元数据（演员 / 导演 / 厂商 / 类型 / 年份 / �
 
 ```
 名称：合集工坊
-URL ：https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/manifest-12.json
+URL ：https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/manifest-12.json
 ```
 
 保存 → 到「目录」页 → 找到「合集工坊」→ 安装 → 重启 Jellyfin。
@@ -20,14 +20,14 @@ URL ：https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-colle
 
 ```
 名称：合集工坊（10.x）
-URL ：https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/manifest-10.json
+URL ：https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/manifest-10.json
 ```
 
 ### Jellyfin 10.9
 
 ```
 名称：合集工坊（10.9）
-URL ：https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/manifest-109.json
+URL ：https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/manifest-109.json
 ```
 
 ## 手动安装
@@ -80,3 +80,17 @@ node tools/build-zip.mjs net8.0    # Jellyfin 10.9
 ## 许可
 
 MIT
+
+## 为什么仓库 URL 用 gh-proxy
+
+Jellyfin 服务器取 `raw.githubusercontent.com` 在国内网络与部分路由器/容器环境里常被阻断
+（服务端会报 `The SSL connection could not be established`）。本清单的 URL 统一用
+`gh-proxy.com` 前缀，服务器与浏览器都能取到；安装包地址同样走该前缀。
+
+如果你的服务器能直连 GitHub，也可以把 URL 换成：
+
+```
+https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/manifest-12.json
+```
+
+两者内容一致，只是取件通道不同。
