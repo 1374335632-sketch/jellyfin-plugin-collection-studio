@@ -1,0 +1,6 @@
+bin/
+obj/
+_out-*/
+dist/stage-*/
+node_modules/
+*.user

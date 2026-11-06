@@ -5,7 +5,8 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { deflateRawSync, crc32 } from 'node:zlib';
 
-const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const srcDir = join(dirname(fileURLToPath(import.meta.url)), '..');
+const root = join(srcDir, '..');
 const DOTNET = 'C:\\Program Files\\dotnet\\dotnet.exe';
 const tfm = process.argv[2] || 'net9.0';
 const pluginId = 'c7d1a2b4-9e53-4f18-8a2c-6b3d5e7f9041';
@@ -13,13 +14,13 @@ const name = 'Jellyfin.Plugin.CollectionStudio';
 const targetAbi = tfm === 'net8.0' ? '10.9.0.0' : (tfm === 'net9.0' ? '10.11.0.0' : '12.4.0.0');
 const version = tfm === 'net8.0' ? '1.0.0.0' : (tfm === 'net9.0' ? '1.0.0.1' : '1.0.0.2');
 
-const outDir = join(root, '_out-' + tfm);
+const outDir = join(srcDir, '_out-' + tfm);
 const stage = join(root, 'dist', 'stage-' + tfm);
 rmSync(outDir, { recursive: true, force: true });
 rmSync(stage, { recursive: true, force: true });
 mkdirSync(stage, { recursive: true });
 
-execFileSync(DOTNET, ['publish', join(root, name + '.csproj'), '-c', 'Release', '-f', tfm, '-o', outDir, '--nologo'], { stdio: 'inherit' });
+execFileSync(DOTNET, ['publish', join(srcDir, name + '.csproj'), '-c', 'Release', '-f', tfm, '-o', outDir, '--nologo'], { stdio: 'inherit' });
 
 for (const f of [name + '.dll', 'LiteDB.dll']) {
   const src = join(outDir, f);

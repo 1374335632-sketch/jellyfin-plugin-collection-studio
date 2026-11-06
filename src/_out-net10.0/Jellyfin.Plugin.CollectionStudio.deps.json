@@ -1,0 +1,358 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "Jellyfin.Plugin.CollectionStudio/1.0.0": {
+        "dependencies": {
+          "Jellyfin.Controller": "12.4.0",
+          "LiteDB": "5.0.21"
+        },
+        "runtime": {
+          "Jellyfin.Plugin.CollectionStudio.dll": {}
+        }
+      },
+      "Diacritics/4.1.8": {
+        "runtime": {
+          "lib/net9.0/Diacritics.dll": {
+            "assemblyVersion": "4.1.8.0",
+            "fileVersion": "4.1.8.0"
+          }
+        }
+      },
+      "ICU4N/60.1.0-alpha.356": {
+        "dependencies": {
+          "J2N": "2.0.0"
+        },
+        "runtime": {
+          "lib/netstandard2.0/ICU4N.dll": {
+            "assemblyVersion": "60.0.0.0",
+            "fileVersion": "60.1.0.0"
+          }
+        }
+      },
+      "ICU4N.Transliterator/60.1.0-alpha.356": {
+        "dependencies": {
+          "ICU4N": "60.1.0-alpha.356"
+        },
+        "runtime": {
+          "lib/netstandard2.0/ICU4N.Transliterator.dll": {
+            "assemblyVersion": "60.0.0.0",
+            "fileVersion": "60.1.0.0"
+          }
+        }
+      },
+      "J2N/2.0.0": {
+        "runtime": {
+          "lib/net6.0/J2N.dll": {
+            "assemblyVersion": "2.0.0.0",
+            "fileVersion": "2.0.0.0"
+          }
+        }
+      },
+      "Jellyfin.Common/12.4.0": {
+        "dependencies": {
+          "Jellyfin.Model": "12.4.0"
+        },
+        "runtime": {
+          "lib/net10.0/MediaBrowser.Common.dll": {
+            "assemblyVersion": "12.4.0.0",
+            "fileVersion": "12.4.0.0"
+          }
+        }
+      },
+      "Jellyfin.Controller/12.4.0": {
+        "dependencies": {
+          "Jellyfin.Common": "12.4.0",
+          "Jellyfin.MediaEncoding.Keyframes": "12.4.0",
+          "Jellyfin.Model": "12.4.0",
+          "Jellyfin.Naming": "12.4.0"
+        },
+        "runtime": {
+          "lib/net10.0/MediaBrowser.Controller.dll": {
+            "assemblyVersion": "12.4.0.0",
+            "fileVersion": "12.4.0.0"
+          }
+        }
+      },
+      "Jellyfin.Data/12.4.0": {
+        "dependencies": {
+          "Jellyfin.Database.Implementations": "12.4.0"
+        },
+        "runtime": {
+          "lib/net10.0/Jellyfin.Data.dll": {
+            "assemblyVersion": "12.4.0.0",
+            "fileVersion": "12.4.0.0"
+          }
+        }
+      },
+      "Jellyfin.Database.Implementations/12.4.0": {
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore.Relational": "10.0.14",
+          "Polly": "8.7.0"
+        },
+        "runtime": {
+          "lib/net10.0/Jellyfin.Database.Implementations.dll": {
+            "assemblyVersion": "12.4.0.0",
+            "fileVersion": "12.4.0.0"
+          }
+        }
+      },
+      "Jellyfin.Extensions/12.4.0": {
+        "dependencies": {
+          "Diacritics": "4.1.8",
+          "ICU4N.Transliterator": "60.1.0-alpha.356"
+        },
+        "runtime": {
+          "lib/net10.0/Jellyfin.Extensions.dll": {
+            "assemblyVersion": "12.4.0.0",
+            "fileVersion": "12.4.0.0"
+          }
+        }
+      },
+      "Jellyfin.MediaEncoding.Keyframes/12.4.0": {
+        "dependencies": {
+          "NEbml": "1.1.0.5"
+        },
+        "runtime": {
+          "lib/net10.0/Jellyfin.MediaEncoding.Keyframes.dll": {
+            "assemblyVersion": "12.4.0.0",
+            "fileVersion": "12.4.0.0"
+          }
+        }
+      },
+      "Jellyfin.Model/12.4.0": {
+        "dependencies": {
+          "Jellyfin.Data": "12.4.0",
+          "Jellyfin.Extensions": "12.4.0"
+        },
+        "runtime": {
+          "lib/net10.0/MediaBrowser.Model.dll": {
+            "assemblyVersion": "12.4.0.0",
+            "fileVersion": "12.4.0.0"
+          }
+        }
+      },
+      "Jellyfin.Naming/12.4.0": {
+        "dependencies": {
+          "Jellyfin.Common": "12.4.0",
+          "Jellyfin.Model": "12.4.0"
+        },
+        "runtime": {
+          "lib/net10.0/Emby.Naming.dll": {
+            "assemblyVersion": "12.4.0.0",
+            "fileVersion": "12.4.0.0"
+          }
+        }
+      },
+      "LiteDB/5.0.21": {
+        "runtime": {
+          "lib/netstandard2.0/LiteDB.dll": {
+            "assemblyVersion": "5.0.21.0",
+            "fileVersion": "5.0.21.0"
+          }
+        }
+      },
+      "Microsoft.EntityFrameworkCore/10.0.14": {
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore.Abstractions": "10.0.14"
+        },
+        "runtime": {
+          "lib/net10.0/Microsoft.EntityFrameworkCore.dll": {
+            "assemblyVersion": "10.0.14.0",
+            "fileVersion": "10.0.1426.52326"
+          }
+        }
+      },
+      "Microsoft.EntityFrameworkCore.Abstractions/10.0.14": {
+        "runtime": {
+          "lib/net10.0/Microsoft.EntityFrameworkCore.Abstractions.dll": {
+            "assemblyVersion": "10.0.14.0",
+            "fileVersion": "10.0.1426.52326"
+          }
+        }
+      },
+      "Microsoft.EntityFrameworkCore.Relational/10.0.14": {
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore": "10.0.14"
+        },
+        "runtime": {
+          "lib/net10.0/Microsoft.EntityFrameworkCore.Relational.dll": {
+            "assemblyVersion": "10.0.14.0",
+            "fileVersion": "10.0.1426.52326"
+          }
+        }
+      },
+      "NEbml/1.1.0.5": {
+        "runtime": {
+          "lib/netstandard2.0/NEbml.Core.dll": {
+            "assemblyVersion": "1.1.0.5",
+            "fileVersion": "1.1.0.5"
+          }
+        }
+      },
+      "Polly/8.7.0": {
+        "dependencies": {
+          "Polly.Core": "8.7.0"
+        },
+        "runtime": {
+          "lib/net6.0/Polly.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.7.0.5801"
+          }
+        }
+      },
+      "Polly.Core/8.7.0": {
+        "runtime": {
+          "lib/net8.0/Polly.Core.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.7.0.5801"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Jellyfin.Plugin.CollectionStudio/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Diacritics/4.1.8": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-6+I0/ui1GvFS3SFSs+92b7yNqq6t32iaBQcO9RnepCiEViD2XmvsSIh4r1VTJe94gDxtkDo9fOSbRK1FjSSpGg==",
+      "path": "diacritics/4.1.8",
+      "hashPath": "diacritics.4.1.8.nupkg.sha512"
+    },
+    "ICU4N/60.1.0-alpha.356": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-YMZtDnjcqWzziOKiE7w6Ma7Rl5vuFDxzOsUlHh1QyfghbNEIZQOLRs9MMfwCWAjX6n9UitrF6vLXy55Z5q+4Fg==",
+      "path": "icu4n/60.1.0-alpha.356",
+      "hashPath": "icu4n.60.1.0-alpha.356.nupkg.sha512"
+    },
+    "ICU4N.Transliterator/60.1.0-alpha.356": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-lFOSO6bbEtB6HkWMNDJAq+rFwVyi9g6xVc5O/2xHa6iZnV7wLVDqCbaQ4W4vIeBSQZAafqhxciaEkmAvSdzlCg==",
+      "path": "icu4n.transliterator/60.1.0-alpha.356",
+      "hashPath": "icu4n.transliterator.60.1.0-alpha.356.nupkg.sha512"
+    },
+    "J2N/2.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-M5bwDajAARZiyqupU+rHQJnsVLxNBOHJ8vKYHd8LcLIb1FgLfzzcJvc31Qo5Xz/GEHFjDF9ScjKL/ks/zRTXuA==",
+      "path": "j2n/2.0.0",
+      "hashPath": "j2n.2.0.0.nupkg.sha512"
+    },
+    "Jellyfin.Common/12.4.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-NGJnfMC+FkRfkiMM6nWmBBrPlBiJxM3r9bqBZ5kej4pwWCcPXamhbgMl9ut3d+DJ95kynnP87myaXb6OksiQfg==",
+      "path": "jellyfin.common/12.4.0",
+      "hashPath": "jellyfin.common.12.4.0.nupkg.sha512"
+    },
+    "Jellyfin.Controller/12.4.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-wiLaaSqanTu8jXXtnLX9l5QHe7UXr8hZ1braL34PwieA3vtQY/oFeBP0k7NTADHAwnwb531Nwt/QZkf40JiPXg==",
+      "path": "jellyfin.controller/12.4.0",
+      "hashPath": "jellyfin.controller.12.4.0.nupkg.sha512"
+    },
+    "Jellyfin.Data/12.4.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-OsSkhufGgfVvvV/4xQ2Er3alDeX4y61tZ82oBEny7au43Xedlc65W7QuwhjSTtDLyFeOSTNCF5IlVziwYaiz/Q==",
+      "path": "jellyfin.data/12.4.0",
+      "hashPath": "jellyfin.data.12.4.0.nupkg.sha512"
+    },
+    "Jellyfin.Database.Implementations/12.4.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-2jAzAZ6a2UV9jBxvS36BTXJSXac2Se9Xp0qOwEtVS1jnNCDtmmcdHYJbPzxPNRo59U1FsiDtiZUPKZxnR09MYA==",
+      "path": "jellyfin.database.implementations/12.4.0",
+      "hashPath": "jellyfin.database.implementations.12.4.0.nupkg.sha512"
+    },
+    "Jellyfin.Extensions/12.4.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-3R8bAoNxpDCQ/LlhXzKbn9PgyXAhfEOVUdeZk83TwUmLMn65skbNonUhsLGRyPUI3rUxSxBuqGSSXNfqDvdP2Q==",
+      "path": "jellyfin.extensions/12.4.0",
+      "hashPath": "jellyfin.extensions.12.4.0.nupkg.sha512"
+    },
+    "Jellyfin.MediaEncoding.Keyframes/12.4.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-NbZ09iU4VhNrvmjmPlTPWSNx+ou7v1SK+R7EVRsU+gipogWz+mQlUSaBlJNeRCHXagF3bKOqEiBSo9/NZiDRgg==",
+      "path": "jellyfin.mediaencoding.keyframes/12.4.0",
+      "hashPath": "jellyfin.mediaencoding.keyframes.12.4.0.nupkg.sha512"
+    },
+    "Jellyfin.Model/12.4.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-8cJAMYpMeXkpmxfILVwU+KUr+960tXZyDN+Y5I3ACCAJna0366bjGmWAV4xqB5XlGA8ZIGTi4K9t3hl2/o+Cgg==",
+      "path": "jellyfin.model/12.4.0",
+      "hashPath": "jellyfin.model.12.4.0.nupkg.sha512"
+    },
+    "Jellyfin.Naming/12.4.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-rb0oCSIPXY42lOsTrloBR3zxmzDEPBVeVLaU3eIKsRfx+vzoNOtsoVhozDTgVaPX5pEc0eofqfgxn/0l9nixMg==",
+      "path": "jellyfin.naming/12.4.0",
+      "hashPath": "jellyfin.naming.12.4.0.nupkg.sha512"
+    },
+    "LiteDB/5.0.21": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-ykJ7ffFl7P9YQKR/PLci6zupiLrsSCNkOTiw6OtzntH7d2kCYp5L1+3a/pksKgTEHcJBoPXFtg7VZSGVBseN9w==",
+      "path": "litedb/5.0.21",
+      "hashPath": "litedb.5.0.21.nupkg.sha512"
+    },
+    "Microsoft.EntityFrameworkCore/10.0.14": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-vY3931PYPIDBbKovGHbACmpOWvURvKNyRXfCjMh5yLW+FH6vLWeqUu2xzSCRo4Oz4tgx9GYpd0JlV5LDyAoQdg==",
+      "path": "microsoft.entityframeworkcore/10.0.14",
+      "hashPath": "microsoft.entityframeworkcore.10.0.14.nupkg.sha512"
+    },
+    "Microsoft.EntityFrameworkCore.Abstractions/10.0.14": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-/SaznoTTFfKzxYEbCPAwwKBR3XT92DZgH4jJ3/cqs2skP3o2D+TL6i9Aaj+8Azwtu6/sRd0ve4P2mN12nfVmCw==",
+      "path": "microsoft.entityframeworkcore.abstractions/10.0.14",
+      "hashPath": "microsoft.entityframeworkcore.abstractions.10.0.14.nupkg.sha512"
+    },
+    "Microsoft.EntityFrameworkCore.Relational/10.0.14": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-Ut0kgtfoKX9QElQVEXSEAgdQc79jISWStVWSOhfPDDHNSKMwFzSXG3gtdYFTAbsBoV+8NtXdVaj4xwdqeky8UA==",
+      "path": "microsoft.entityframeworkcore.relational/10.0.14",
+      "hashPath": "microsoft.entityframeworkcore.relational.10.0.14.nupkg.sha512"
+    },
+    "NEbml/1.1.0.5": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-svtqDc+hue9kbnqNN2KkK4om/hDrc7K127cNb5FIYfgKgzo+JNDPXNLp8NioCchHhBO3lxWd4Cp/iiZZ3aoUqg==",
+      "path": "nebml/1.1.0.5",
+      "hashPath": "nebml.1.1.0.5.nupkg.sha512"
+    },
+    "Polly/8.7.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-0qR4f0OR8FeCAfLWcfwzAM7w6EmpUgwa22PgxKjcL25dEAto7sKpQQXbtxp38vVvK+V3RFkh/TeI7g/iUdoYIQ==",
+      "path": "polly/8.7.0",
+      "hashPath": "polly.8.7.0.nupkg.sha512"
+    },
+    "Polly.Core/8.7.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-BS2t+nsBer16PIebCEPNBK5fgMisADQyRCd7K+BgkMWpFmSaiYE+rVVNpFhGRqUkJmNSLmw0uCNzHHWfgml28Q==",
+      "path": "polly.core/8.7.0",
+      "hashPath": "polly.core.8.7.0.nupkg.sha512"
+    }
+  }
+}

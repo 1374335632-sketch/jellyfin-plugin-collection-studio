@@ -13,7 +13,7 @@
         "changelog": "按演员/导演/厂商/类型/年份/复杂条件生成合集；支持 MetaTube 与自定义刮削源写真封面；改名对照表与 Excel 导出；备份与按时间段还原。",
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/dist/Jellyfin.Plugin.CollectionStudio-1.0.0.1-net9.0.zip",
-        "checksum": "d8ed7049f92a0fdf3f9902a72b122303",
+        "checksum": "55a4f399495bc8b48697840e7f0dfaf0",
         "timestamp": "2026-11-07T00:00:00Z"
       }
     ]
