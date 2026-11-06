@@ -10,10 +10,18 @@
     "versions": [
       {
         "version": "1.1.0.2",
-        "changelog": "1.1：设置页改为 Jellyfin 控制台内部页面（不再接管整页）；分类规则新增「参与分类的媒体库」选择；适配 Jellyfin 12.4 授权方式。",
+        "changelog": "设置页改为 Jellyfin 控制台内部页面（不再接管整页）；分类规则新增「参与分类的媒体库」选择；适配 Jellyfin 12.4 授权方式。",
         "targetAbi": "12.4.0.0",
         "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/dist/Jellyfin.Plugin.CollectionStudio-1.1.0.2-net10.0.zip",
         "checksum": "ec25222e08e9cb5226cdfd2349813902",
+        "timestamp": "2026-11-07T00:00:00Z"
+      },
+      {
+        "version": "1.0.0.2",
+        "changelog": "",
+        "targetAbi": "12.4.0.0",
+        "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/dist/Jellyfin.Plugin.CollectionStudio-1.0.0.2-net10.0.zip",
+        "checksum": "35e42da9a797d3205bcd774b074c2d89",
         "timestamp": "2026-11-07T00:00:00Z"
       }
     ]

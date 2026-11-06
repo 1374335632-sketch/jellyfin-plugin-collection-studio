@@ -17,6 +17,7 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
             if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
             _db = new LiteDatabase(new ConnectionString { Filename = dbPath, Connection = ConnectionType.Shared });
             FilePath = dbPath;
+            Track(_db);
             Rules.EnsureIndex(x => x.Enabled);
             Collections.EnsureIndex(x => x.RuleId);
             Items.EnsureIndex(x => x.Name);
@@ -106,6 +107,37 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
             return System.Text.Json.JsonSerializer.Deserialize<BackupPayload>(doc.Payload) ?? new BackupPayload();
         }
 
-        public void Dispose() => _db.Dispose();
+        public void Dispose()
+        {
+            try { _db.Dispose(); } catch { }
+        }
+
+        /// <summary>登记所有打开的库，卸载插件时统一释放，避免文件句柄占用导致删除失败。</summary>
+        private static readonly List<WeakReference<LiteDatabase>> OpenDbs = new List<WeakReference<LiteDatabase>>();
+
+        internal static void Track(LiteDatabase db)
+        {
+            lock (OpenDbs)
+            {
+                OpenDbs.RemoveAll(w => !w.TryGetTarget(out var t) || t == null);
+                OpenDbs.Add(new WeakReference<LiteDatabase>(db));
+            }
+        }
+
+        public static void CloseAll()
+        {
+            lock (OpenDbs)
+            {
+                foreach (var w in OpenDbs)
+                {
+                    if (w.TryGetTarget(out var db))
+                    {
+                        try { db.Dispose(); } catch { }
+                    }
+                }
+                OpenDbs.Clear();
+            }
+
+        }
     }
 }

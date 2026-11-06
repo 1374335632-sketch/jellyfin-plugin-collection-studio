@@ -20,7 +20,15 @@ rmSync(outDir, { recursive: true, force: true });
 rmSync(stage, { recursive: true, force: true });
 mkdirSync(stage, { recursive: true });
 
-execFileSync(DOTNET, ['publish', join(srcDir, name + '.csproj'), '-c', 'Release', '-f', tfm, '-o', outDir, '--nologo'], { stdio: 'inherit' });
+// 关键：AssemblyVersion 必须与 meta.json 的 version 一致，否则 Jellyfin 用程序集版本登记插件，
+// 会出现「插件显示的版本对不上」「禁用/卸载找不到对应版本」等问题。
+execFileSync(DOTNET, [
+  'publish', join(srcDir, name + '.csproj'),
+  '-c', 'Release', '-f', tfm, '-o', outDir, '--nologo',
+  '-p:AssemblyVersion=' + version,
+  '-p:FileVersion=' + version,
+  '-p:InformationalVersion=' + version
+], { stdio: 'inherit' });
 
 for (const f of [name + '.dll', 'LiteDB.dll']) {
   const src = join(outDir, f);
