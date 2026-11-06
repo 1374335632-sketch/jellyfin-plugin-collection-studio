@@ -1,0 +1,928 @@
+:root {
+  color-scheme: dark;
+  --cs-bg: #0f141a;
+  --cs-surface: #161d25;
+  --cs-surface-2: #1d2731;
+  --cs-surface-3: #243040;
+  --cs-border: #2b3743;
+  --cs-fg: #e8eef5;
+  --cs-fg-dim: #97a7b8;
+  --cs-accent: #00a4dc;
+  --cs-accent-soft: rgba(0, 164, 220, 0.16);
+  --cs-danger: #e5484d;
+  --cs-danger-soft: rgba(229, 72, 77, 0.16);
+  --cs-ok: #3dd68c;
+  --cs-warn: #f0b429;
+  --cs-radius: 10px;
+  --cs-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --cs-bg: #f4f6f9;
+  --cs-surface: #ffffff;
+  --cs-surface-2: #eef2f6;
+  --cs-surface-3: #e3e9f0;
+  --cs-border: #d6dde5;
+  --cs-fg: #1d2530;
+  --cs-fg-dim: #5c6b7c;
+  --cs-accent: #007fb0;
+  --cs-accent-soft: rgba(0, 127, 176, 0.12);
+  --cs-danger: #cc2f35;
+  --cs-danger-soft: rgba(204, 47, 53, 0.1);
+  --cs-ok: #1f8a52;
+  --cs-warn: #a86f00;
+  --cs-shadow: 0 10px 26px rgba(20, 40, 60, 0.14);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  font-family: "Segoe UI", "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+body {
+  background: transparent;
+  color: var(--cs-fg);
+  -webkit-font-smoothing: antialiased;
+}
+
+.cs-app {
+  display: flex;
+  min-height: 100vh;
+  background: var(--cs-bg);
+  color: var(--cs-fg);
+}
+
+/* ---------------- 侧边导航 ---------------- */
+.cs-sidebar {
+  flex: 0 0 208px;
+  width: 208px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 12px;
+  background: var(--cs-surface);
+  border-right: 1px solid var(--cs-border);
+}
+
+.cs-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 8px 12px;
+  border-bottom: 1px solid var(--cs-border);
+}
+
+.cs-brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--cs-accent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.cs-brand-text {
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 1px;
+}
+
+.cs-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cs-nav-item {
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--cs-fg-dim);
+  text-align: left;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.cs-nav-item:hover {
+  background: var(--cs-surface-2);
+  color: var(--cs-fg);
+}
+
+.cs-nav-item.is-active {
+  background: var(--cs-accent-soft);
+  border-color: var(--cs-accent);
+  color: var(--cs-fg);
+  font-weight: 600;
+}
+
+.cs-sidebar-foot {
+  margin-top: auto;
+  padding: 10px 8px 0;
+  border-top: 1px solid var(--cs-border);
+  color: var(--cs-fg-dim);
+  font-size: 12px;
+}
+
+/* ---------------- 主区 ---------------- */
+.cs-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.cs-topbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 24px 12px;
+}
+
+.cs-page-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.cs-page-sub {
+  margin: 2px 0 0;
+  color: var(--cs-fg-dim);
+  font-size: 13px;
+}
+
+.cs-content {
+  padding: 4px 24px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cs-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cs-view[hidden] { display: none; }
+
+/* ---------------- 卡片 ---------------- */
+.cs-card {
+  background: var(--cs-surface);
+  border: 1px solid var(--cs-border);
+  border-radius: var(--cs-radius);
+  padding: 14px 16px 16px;
+}
+
+.cs-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.cs-card-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.cs-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ---------------- 按钮 ---------------- */
+.cs-btn {
+  appearance: none;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.2;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--cs-border);
+  background: var(--cs-surface-2);
+  color: var(--cs-fg);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+  white-space: nowrap;
+}
+
+.cs-btn:hover { background: var(--cs-surface-3); }
+.cs-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.cs-btn-primary {
+  background: var(--cs-accent);
+  border-color: var(--cs-accent);
+  color: #fff;
+}
+
+.cs-btn-primary:hover { background: #0090c2; border-color: #0090c2; }
+
+.cs-btn-danger {
+  background: var(--cs-danger);
+  border-color: var(--cs-danger);
+  color: #fff;
+}
+
+.cs-btn-danger:hover { background: #c93a3f; border-color: #c93a3f; }
+
+.cs-btn-sm { padding: 5px 10px; font-size: 12px; }
+
+.cs-btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--cs-fg-dim);
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
+.cs-btn-ghost:hover { background: var(--cs-surface-2); color: var(--cs-fg); }
+
+.cs-btn-ghost-danger { color: var(--cs-danger); }
+.cs-btn-ghost-danger:hover { background: var(--cs-danger-soft); color: var(--cs-danger); }
+
+/* ---------------- 表单 ---------------- */
+.cs-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cs-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.cs-grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+
+.cs-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+
+.cs-field-inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.cs-label { color: var(--cs-fg-dim); font-size: 12px; }
+.cs-inline-text { color: var(--cs-fg); font-size: 13px; }
+
+.cs-input, .cs-select {
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--cs-fg);
+  background: var(--cs-surface-2);
+  border: 1px solid var(--cs-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  min-width: 0;
+  width: 100%;
+}
+
+.cs-input:focus, .cs-select:focus {
+  outline: none;
+  border-color: var(--cs-accent);
+  box-shadow: 0 0 0 2px var(--cs-accent-soft);
+}
+
+.cs-select { height: 34px; }
+.cs-input-sm { width: 84px; }
+
+.cs-hint { margin: 0; color: var(--cs-fg-dim); font-size: 12px; }
+
+.cs-form-foot {
+  display: flex;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--cs-border);
+  margin-top: 4px;
+  padding-top: 12px;
+}
+
+.cs-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.cs-toolbar .cs-label { white-space: nowrap; }
+
+.cs-grow { flex: 1 1 260px; }
+
+/* ---------------- 表格 ---------------- */
+.cs-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--cs-border);
+  border-radius: 8px;
+}
+
+.cs-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.cs-table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--cs-fg-dim);
+  background: var(--cs-surface-2);
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--cs-border);
+  white-space: nowrap;
+}
+
+.cs-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--cs-border);
+  vertical-align: middle;
+}
+
+.cs-table tr:last-child td { border-bottom: none; }
+
+.cs-table tbody tr:hover td { background: var(--cs-surface-2); }
+
+.cs-table-msg td,
+.cs-cell-msg {
+  color: var(--cs-fg-dim);
+  text-align: center;
+  padding: 18px 12px;
+}
+
+.cs-ellipsis {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cs-mono { font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+
+.cs-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.cs-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: var(--cs-surface-3);
+  color: var(--cs-fg);
+  white-space: nowrap;
+}
+
+.cs-badge-ok { background: var(--cs-accent-soft); color: var(--cs-accent); }
+.cs-badge-dim { background: var(--cs-surface-2); color: var(--cs-fg-dim); }
+
+.cs-thumb {
+  width: 52px;
+  height: 74px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--cs-border);
+  background: var(--cs-surface-2);
+  display: block;
+}
+
+.cs-thumb-empty {
+  width: 52px;
+  height: 74px;
+  border-radius: 6px;
+  border: 1px dashed var(--cs-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cs-fg-dim);
+  font-size: 11px;
+}
+
+/* ---------------- 总览卡片 ---------------- */
+.cs-status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.cs-stat {
+  background: var(--cs-surface);
+  border: 1px solid var(--cs-border);
+  border-radius: var(--cs-radius);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cs-stat-label { color: var(--cs-fg-dim); font-size: 12px; }
+.cs-stat-value { font-size: 17px; font-weight: 600; word-break: break-all; }
+.cs-stat-value.is-ok { color: var(--cs-accent); }
+.cs-stat-value.is-warn { color: var(--cs-warn); }
+.cs-stat-value.is-dim { color: var(--cs-fg-dim); font-size: 15px; }
+
+.cs-meta { color: var(--cs-fg-dim); font-size: 12px; margin-bottom: 8px; }
+
+.cs-log {
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid var(--cs-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--cs-surface-2);
+}
+
+.cs-log-line {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  padding: 2px 0;
+  border-bottom: 1px dashed var(--cs-border);
+}
+
+.cs-log-line:last-child { border-bottom: none; }
+.cs-log-dim { color: var(--cs-fg-dim); font-family: inherit; }
+
+/* ---------------- 分页 ---------------- */
+.cs-pager {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+}
+
+.cs-pager-info { color: var(--cs-fg-dim); font-size: 13px; }
+
+/* ---------------- 高级条件 ---------------- */
+.cs-cond-wrap {
+  border: 1px dashed var(--cs-border);
+  border-radius: 8px;
+  padding: 10px 12px 12px;
+  background: var(--cs-surface-2);
+}
+
+.cs-cond-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.cs-cond-list { display: flex; flex-direction: column; gap: 8px; }
+
+.cs-cond-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 0.8fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.cs-cond-empty { color: var(--cs-fg-dim); font-size: 12px; }
+
+/* ---------------- 刮削源 ---------------- */
+.cs-sources { display: flex; flex-direction: column; gap: 12px; }
+
+.cs-source {
+  border: 1px solid var(--cs-border);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--cs-surface-2);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cs-source > .cs-btn { align-self: flex-start; }
+
+.cs-source-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cs-source-title { font-weight: 600; font-size: 13px; }
+
+.cs-headers { display: flex; flex-direction: column; gap: 6px; }
+
+.cs-header-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.cs-test-result { color: var(--cs-fg-dim); font-size: 13px; }
+.cs-test-result.is-ok { color: var(--cs-ok); }
+.cs-test-result.is-bad { color: var(--cs-danger); }
+
+.cs-empty {
+  color: var(--cs-fg-dim);
+  text-align: center;
+  padding: 24px 12px;
+  font-size: 13px;
+}
+
+/* ---------------- Toast ---------------- */
+.cs-toast-wrap {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 90;
+  max-width: min(420px, calc(100vw - 36px));
+  pointer-events: none;
+}
+
+.cs-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--cs-surface);
+  border: 1px solid var(--cs-border);
+  border-left: 3px solid var(--cs-accent);
+  color: var(--cs-fg);
+  font-size: 13px;
+  box-shadow: var(--cs-shadow);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.18s, transform 0.18s;
+  pointer-events: auto;
+}
+
+.cs-toast.is-open { opacity: 1; transform: translateY(0); }
+.cs-toast-error { border-left-color: var(--cs-danger); }
+.cs-toast-success { border-left-color: var(--cs-ok); }
+
+.cs-toast-text { flex: 1 1 auto; word-break: break-word; }
+
+.cs-toast-close {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--cs-fg-dim);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+/* ---------------- 模态 ---------------- */
+.cs-modal-root { position: relative; }
+.cs-modal-root[hidden] { display: none; }
+
+.cs-layer {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 60;
+}
+
+.cs-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.62);
+  opacity: 0;
+  transition: opacity 0.18s;
+}
+
+.cs-dialog {
+  position: relative;
+  width: min(680px, 100%);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--cs-surface);
+  border: 1px solid var(--cs-border);
+  border-radius: 12px;
+  box-shadow: var(--cs-shadow);
+  opacity: 0;
+  transform: translateY(10px) scale(0.98);
+  transition: opacity 0.18s, transform 0.18s;
+  overflow: hidden;
+}
+
+.cs-dialog-wide { width: min(940px, 100%); }
+.cs-layer.is-open .cs-backdrop { opacity: 1; }
+.cs-layer.is-open .cs-dialog { opacity: 1; transform: translateY(0) scale(1); }
+
+.cs-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--cs-border);
+}
+
+.cs-dialog-title { margin: 0; font-size: 15px; font-weight: 600; }
+
+.cs-icon-btn {
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--cs-fg-dim);
+  font-size: 15px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.cs-icon-btn:hover { background: var(--cs-surface-2); color: var(--cs-fg); }
+
+.cs-dialog-body {
+  padding: 14px 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cs-dialog-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--cs-border);
+  background: var(--cs-surface-2);
+}
+
+.cs-kv { display: flex; gap: 6px; font-size: 13px; }
+.cs-kv-key { color: var(--cs-fg-dim); }
+
+.cs-scroll {
+  max-height: 46vh;
+  overflow-y: auto;
+  border: 1px solid var(--cs-border);
+  border-radius: 8px;
+}
+
+.cs-preview-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--cs-border);
+}
+
+.cs-preview-row:last-child { border-bottom: none; }
+.cs-preview-name { font-size: 13px; word-break: break-all; }
+.cs-preview-count { color: var(--cs-fg-dim); font-size: 12px; white-space: nowrap; }
+
+.cs-notice {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--cs-accent-soft);
+  color: var(--cs-fg);
+  font-size: 12px;
+}
+
+.cs-danger-text { color: var(--cs-danger); }
+.cs-warn-box {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--cs-danger-soft);
+  border: 1px solid var(--cs-danger);
+  font-size: 13px;
+}
+.cs-warn-box p { margin: 0 0 6px; }
+.cs-warn-box p:last-child { margin-bottom: 0; }
+
+.cs-cover-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 10px;
+  max-height: 46vh;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.cs-cover-grid > .cs-cover-cap,
+.cs-cover-grid > .cs-empty {
+  grid-column: 1 / -1;
+  text-align: left;
+}
+
+.cs-cover-item {
+  appearance: none;
+  border: 2px solid transparent;
+  background: var(--cs-surface-2);
+  border-radius: 8px;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--cs-fg);
+}
+
+.cs-cover-item img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
+  background: var(--cs-surface-3);
+}
+
+.cs-cover-item.is-selected { border-color: var(--cs-accent); box-shadow: 0 0 0 2px var(--cs-accent-soft); }
+.cs-cover-cap { font-size: 11px; color: var(--cs-fg-dim); text-align: center; word-break: break-all; }
+
+.cs-current-cover {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid var(--cs-border);
+  border-radius: 8px;
+  background: var(--cs-surface-2);
+}
+
+.cs-current-cover img { width: 70px; height: 100px; object-fit: cover; border-radius: 6px; }
+.cs-current-cover .cs-thumb-empty { width: 70px; height: 100px; }
+.cs-current-text { color: var(--cs-fg-dim); font-size: 12px; word-break: break-all; }
+
+.cs-items-list {
+  max-height: 50vh;
+  overflow-y: auto;
+  border: 1px solid var(--cs-border);
+  border-radius: 8px;
+}
+
+.cs-item-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--cs-border);
+}
+
+.cs-item-row:last-child { border-bottom: none; }
+.cs-item-name { font-size: 13px; }
+.cs-item-path { font-size: 11px; color: var(--cs-fg-dim); word-break: break-all; }
+
+.cs-radio-row { display: flex; flex-direction: column; gap: 8px; }
+.cs-radio-row label { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.cs-group-label { color: var(--cs-fg-dim); font-size: 12px; margin-bottom: 2px; }
+
+.cs-summary {
+  border: 1px solid var(--cs-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--cs-surface-2);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+/* ---------------- 响应式 ---------------- */
+@media (max-width: 900px) {
+  .cs-app { flex-direction: column; }
+
+  .cs-sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    flex: none;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-right: none;
+    border-bottom: 1px solid var(--cs-border);
+    overflow-x: auto;
+  }
+
+  .cs-brand { padding: 0 10px 0 0; border-bottom: none; border-right: 1px solid var(--cs-border); flex: none; }
+  .cs-brand-text { display: none; }
+
+  .cs-nav { flex-direction: row; gap: 6px; flex-wrap: nowrap; }
+
+  .cs-nav-item { padding: 7px 12px; font-size: 13px; }
+
+  .cs-sidebar-foot { display: none; }
+
+  .cs-topbar { padding: 14px 14px 8px; }
+  .cs-content { padding: 4px 14px 28px; }
+
+  .cs-grid2, .cs-grid3 { grid-template-columns: minmax(0, 1fr); }
+
+  .cs-cond-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .cs-cond-row .cs-cond-del { grid-column: 2; justify-self: end; }
+
+  /* 窄屏表格强制横向滚动，避免列被压扁 */
+  .cs-table { min-width: 1000px; }
+  .cs-dialog { max-height: 92vh; }
+  .cs-cover-grid { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); }
+  .cs-cover-item img { height: 118px; }
+}
+
+@media (max-width: 560px) {
+  .cs-status-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .cs-card { padding: 12px; }
+}
+
+/* Jellyfin 控制台的 backgroundContainer 是一层全屏覆盖层，插件页若没有自己的层叠上下文，
+   点击会被那层吃掉。这里给插件页根节点建立独立层叠上下文并压到覆盖层之上。 */
+.cs-page {
+  position: relative !important;
+  z-index: 1500 !important;
+  pointer-events: auto !important;
+}
+/* Jellyfin 控制台会给每个页面根节点加上 mainAnimatedPage 并套用自己的定位规则
+   （mainAnimatedPage:not(.metadataEditorPage){left:240px}），我们这份已经在一个定位好的容器里，
+   再叠加会被推出视角、右侧内容被截断。这里把定位重置为相对父容器铺满。 */
+/* 控制台把插件页放在 left:240px 的容器里，插件自身只需铺满该容器，
+   表格与卡片按可用宽度自适应，避免内容溢出到视角之外。 */
+.cs-app {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: hidden;
+}
+
+.cs-main {
+  min-width: 0;
+}
+
+.cs-content {
+  min-width: 0;
+}
+
+.cs-table-wrap,
+.cs-card table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.cs-status-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+}
+/* 控制台把自己的主内容区起点当作 left:240px，而我们这份插件页已经位于该内容区内部，
+   再叠加 240px 会被整体右移出视角。只修正横向偏移，其余定位规则保持宿主原样。 */
+.cs-page.mainAnimatedPage,
+.cs-page,
+.mainAnimatedPage[data-role="page"] {
+  left: 0 !important;
+  right: 0 !important;
+}
+/* 弹窗层以插件容器铺满可见区域：宿主会给页面根加 contain，
+   position:fixed 的参照系因此变成插件容器而不是窗口，这里统一改成相对插件容器绝对定位。 */
+.cs-modal-root { position: static !important; }
+.cs-app { position: relative; }
+.cs-layer {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  min-height: 100% !important;
+}
+/* 弹窗层挂在 body 上，因此用视口定位即可；同时压过 Jellyfin 控制台自身的浮层 */
+.cs-modal-host { position: static; }
+.cs-layer {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  min-height: 0 !important;
+  z-index: 2000 !important;
+}

@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>合集工坊</title>
+<link rel="stylesheet" href="./app.css" />
+</head>
+<body>
+<div class="cs-app" id="csApp">
+  <aside class="cs-sidebar" id="csSidebar">
+    <div class="cs-brand">
+      <span class="cs-brand-mark">合</span>
+      <span class="cs-brand-text">合集工坊</span>
+    </div>
+    <nav class="cs-nav" id="csNavList" aria-label="主导航">
+      <button type="button" class="cs-nav-item is-active" data-tab="overview" aria-current="page" onclick="if(window.CS){window.CS.nav('overview', this);}">总览</button>
+      <button type="button" class="cs-nav-item" data-tab="rules" onclick="if(window.CS){window.CS.nav('rules', this);}">分类规则</button>
+      <button type="button" class="cs-nav-item" data-tab="collections" onclick="if(window.CS){window.CS.nav('collections', this);}">合集管理</button>
+      <button type="button" class="cs-nav-item" data-tab="rename" onclick="if(window.CS){window.CS.nav('rename', this);}">改名对照</button>
+      <button type="button" class="cs-nav-item" data-tab="backups" onclick="if(window.CS){window.CS.nav('backups', this);}">备份与还原</button>
+      <button type="button" class="cs-nav-item" data-tab="settings" onclick="if(window.CS){window.CS.nav('settings', this);}">设置</button>
+    </nav>
+    <div class="cs-sidebar-foot" id="csSidebarFoot">Jellyfin 插件 · 全中文前端</div>
+  </aside>
+
+  <main class="cs-main">
+    <header class="cs-topbar">
+      <div class="cs-topbar-title">
+        <h1 class="cs-page-title" id="csPageTitle">总览</h1>
+        <p class="cs-page-sub" id="csPageSub">插件运行状态与索引概况</p>
+      </div>
+    </header>
+
+    <div class="cs-content">
+      <section class="cs-view is-active" id="view-overview" data-view="overview">
+        <div class="cs-status-grid" id="ovStatusGrid"></div>
+
+        <div class="cs-card">
+          <div class="cs-card-head">
+            <h2 class="cs-card-title">定时任务</h2>
+            <div class="cs-card-actions">
+              <button type="button" class="cs-btn cs-btn-primary" id="ovScanBtn">立即扫描</button>
+              <button type="button" class="cs-btn" id="ovTasksRefresh">刷新</button>
+            </div>
+          </div>
+          <div class="cs-table-wrap">
+            <table class="cs-table">
+              <thead>
+                <tr><th>任务名称</th><th>任务 ID</th><th>上次运行</th><th>状态</th></tr>
+              </thead>
+              <tbody id="ovTasksBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="cs-card">
+          <div class="cs-card-head">
+            <h2 class="cs-card-title">最近日志</h2>
+            <div class="cs-card-actions">
+              <select class="cs-select" id="ovLogTaskSelect"></select>
+              <button type="button" class="cs-btn" id="ovLogRefresh">刷新日志</button>
+            </div>
+          </div>
+          <div class="cs-meta" id="ovLogMeta"></div>
+          <div class="cs-log" id="ovLogList"></div>
+        </div>
+      </section>
+
+      <section class="cs-view" id="view-rules" data-view="rules" hidden>
+        <div class="cs-card">
+          <div class="cs-card-head">
+            <h2 class="cs-card-title">规则列表</h2>
+            <div class="cs-card-actions">
+              <button type="button" class="cs-btn cs-btn-primary" id="ruleNewBtn">新建规则</button>
+              <button type="button" class="cs-btn" id="ruleRefreshBtn">刷新</button>
+            </div>
+          </div>
+          <div class="cs-table-wrap">
+            <table class="cs-table">
+              <thead>
+                <tr>
+                  <th>规则名称</th><th>分类模式</th><th>合集名模板</th><th>条件摘要</th>
+                  <th>排序</th><th>封面来源</th><th>更新时间</th><th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="ruleListBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="cs-card" id="ruleFormWrap" hidden>
+          <div class="cs-card-head">
+            <h2 class="cs-card-title" id="rfFormTitle">新建规则</h2>
+            <div class="cs-card-actions">
+              <button type="button" class="cs-btn" id="rfCancelTop">收起表单</button>
+            </div>
+          </div>
+
+          <form class="cs-form" id="ruleForm">
+            <div class="cs-grid2">
+              <label class="cs-field">
+                <span class="cs-label">规则名称</span>
+                <input class="cs-input" id="rfName" type="text" placeholder="例如：按演员生成合集" />
+              </label>
+              <label class="cs-field">
+                <span class="cs-label">分类模式</span>
+                <select class="cs-select" id="rfMode"></select>
+              </label>
+            </div>
+
+            <div class="cs-grid2">
+              <label class="cs-field">
+                <span class="cs-label">目标合集名（支持 {value} 占位符）</span>
+                <input class="cs-input" id="rfTargetName" type="text" placeholder="例如：{value} 合集" />
+              </label>
+              <label class="cs-field">
+                <span class="cs-label">合集名模板 titleTemplate</span>
+                <input class="cs-input" id="rfTitleTemplate" type="text" placeholder="例如：{value} 合集" />
+              </label>
+            </div>
+            <p class="cs-hint">「目标合集名」优先，为空时使用「合集名模板」；其中 {value} 会被替换为分组值（演员名 / 厂商名 / 类型名 / 年份）。</p>
+
+            <div class="cs-cond-wrap" id="rfConditionsWrap" hidden>
+              <div class="cs-cond-head">
+                <span class="cs-label">高级条件（可添加多行）</span>
+                <button type="button" class="cs-btn cs-btn-sm" id="rfAddCondition">+ 添加条件</button>
+              </div>
+              <div class="cs-cond-list" id="rfConditionList"></div>
+            </div>
+
+            <div class="cs-grid3">
+              <label class="cs-field">
+                <span class="cs-label">排序字段</span>
+                <select class="cs-select" id="rfSortBy"></select>
+              </label>
+              <label class="cs-field">
+                <span class="cs-label">排序方向</span>
+                <select class="cs-select" id="rfSortDesc">
+                  <option value="false">升序</option>
+                  <option value="true">降序</option>
+                </select>
+              </label>
+              <label class="cs-field">
+                <span class="cs-label">封面来源</span>
+                <select class="cs-select" id="rfCoverMode"></select>
+              </label>
+            </div>
+
+            <div class="cs-grid3">
+              <label class="cs-field">
+                <span class="cs-label">自定义封面 URL</span>
+                <input class="cs-input" id="rfCoverUrl" type="text" placeholder="选择「自定义 URL」时生效" />
+              </label>
+              <label class="cs-field">
+                <span class="cs-label">写真 Provider</span>
+                <select class="cs-select" id="rfCoverProvider">
+                  <option value="GFriends">GFriends</option>
+                  <option value="MetaTube">MetaTube</option>
+                </select>
+              </label>
+              <label class="cs-field cs-field-inline">
+                <input type="checkbox" id="rfRefresh" checked />
+                <span class="cs-inline-text">执行后刷新合集元数据</span>
+              </label>
+            </div>
+
+            <div class="cs-grid3">
+              <label class="cs-field">
+                <span class="cs-label">最少影片数 minItems</span>
+                <input class="cs-input" id="rfMinItems" type="number" min="1" value="1" />
+              </label>
+              <label class="cs-field">
+                <span class="cs-label">合集数量上限 maxCollections（0 为不限）</span>
+                <input class="cs-input" id="rfMaxCollections" type="number" min="0" value="0" />
+              </label>
+              <label class="cs-field cs-field-inline">
+                <input type="checkbox" id="rfEnabled" checked />
+                <span class="cs-inline-text">启用该规则</span>
+              </label>
+            </div>
+
+            <div class="cs-form-foot">
+              <button type="submit" class="cs-btn cs-btn-primary" id="rfSave">保存规则</button>
+              <button type="button" class="cs-btn" id="rfCancel">取消</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section class="cs-view" id="view-collections" data-view="collections" hidden>
+        <div class="cs-card">
+          <div class="cs-card-head">
+            <h2 class="cs-card-title">合集列表</h2>
+            <div class="cs-card-actions">
+              <button type="button" class="cs-btn" id="colRefreshBtn">刷新</button>
+            </div>
+          </div>
+          <div class="cs-table-wrap">
+            <table class="cs-table">
+              <thead>
+                <tr><th>封面</th><th>合集名</th><th>所属规则</th><th>影片数</th><th>更新时间</th><th>操作</th></tr>
+              </thead>
+              <tbody id="colListBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="cs-view" id="view-rename" data-view="rename" hidden>
+        <div class="cs-card">
+          <div class="cs-card-head">
+            <h2 class="cs-card-title">改名对照</h2>
+            <div class="cs-card-actions">
+              <button type="button" class="cs-btn cs-btn-primary" id="rnExportBtn">导出 Excel</button>
+            </div>
+          </div>
+          <div class="cs-toolbar">
+            <label class="cs-field cs-field-inline cs-grow">
+              <span class="cs-label">筛选 Jellyfin 名称</span>
+              <input class="cs-input" id="rnFilter" type="search" placeholder="输入关键字，停止输入 350ms 后自动筛选" />
+            </label>
+            <label class="cs-field cs-field-inline">
+              <span class="cs-label">每页条数</span>
+              <select class="cs-select" id="rnPageSize">
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="200">200</option>
+              </select>
+            </label>
+            <button type="button" class="cs-btn" id="rnRefreshBtn">刷新</button>
+          </div>
+          <div class="cs-table-wrap">
+            <table class="cs-table">
+              <thead>
+                <tr><th>路径</th><th>原始名称</th><th>Jellyfin 名称</th><th>类型</th><th>年份</th><th>所属合集</th></tr>
+              </thead>
+              <tbody id="rnListBody"></tbody>
+            </table>
+          </div>
+          <div class="cs-pager">
+            <button type="button" class="cs-btn" id="rnPrev">上一页</button>
+            <button type="button" class="cs-btn" id="rnNext">下一页</button>
+            <label class="cs-field cs-field-inline">
+              <span class="cs-label">跳至</span>
+              <input class="cs-input cs-input-sm" id="rnJump" type="number" min="1" value="1" />
+              <button type="button" class="cs-btn cs-btn-sm" id="rnJumpBtn">跳转</button>
+            </label>
+            <span class="cs-pager-info" id="rnPageInfo">第 1 / 1 页，共 0 条</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="cs-view" id="view-backups" data-view="backups" hidden>
+        <div class="cs-card">
+          <div class="cs-card-head">
+            <h2 class="cs-card-title">备份列表</h2>
+            <div class="cs-card-actions">
+              <input class="cs-input" id="bkNoteInput" type="text" placeholder="本次备份备注（可选）" />
+              <button type="button" class="cs-btn cs-btn-primary" id="bkCreateBtn">立即备份</button>
+              <button type="button" class="cs-btn" id="bkRestoreBtn">还原数据</button>
+              <button type="button" class="cs-btn" id="bkRefreshBtn">刷新</button>
+            </div>
+          </div>
+          <div class="cs-table-wrap">
+            <table class="cs-table">
+              <thead>
+                <tr>
+                  <th>备份名称</th><th>创建时间</th><th>来源</th><th>备注</th>
+                  <th>规则数</th><th>合集数</th><th>大小(KB)</th><th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="bkListBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="cs-view" id="view-settings" data-view="settings" hidden>
+        <div class="cs-card">
+          <div class="cs-card-head">
+            <h2 class="cs-card-title">MetaTube 与基础设置</h2>
+            <div class="cs-card-actions">
+              <button type="button" class="cs-btn" id="stTestBtn">测试连接</button>
+              <button type="button" class="cs-btn cs-btn-primary" id="stSaveBtn">保存</button>
+            </div>
+          </div>
+          <form class="cs-form" id="settingsForm">
+            <div class="cs-grid2">
+              <label class="cs-field">
+                <span class="cs-label">MetaTube 地址</span>
+                <input class="cs-input" id="stBaseUrl" type="text" placeholder="http://192.168.1.2:8080" />
+              </label>
+              <label class="cs-field">
+                <span class="cs-label">MetaTube Token</span>
+                <input class="cs-input" id="stToken" type="text" placeholder="可留空" />
+              </label>
+            </div>
+            <div class="cs-grid3">
+              <label class="cs-field">
+                <span class="cs-label">演员写真来源 Provider</span>
+                <select class="cs-select" id="stProvider">
+                  <option value="GFriends">GFriends</option>
+                  <option value="MetaTube">MetaTube</option>
+                </select>
+              </label>
+              <label class="cs-field">
+                <span class="cs-label">MetaTube 超时（秒）</span>
+                <input class="cs-input" id="stTimeout" type="number" min="1" max="600" value="20" />
+              </label>
+              <label class="cs-field">
+                <span class="cs-label">默认每页条数</span>
+                <select class="cs-select" id="stPageSize">
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                  <option value="200">200</option>
+                </select>
+              </label>
+            </div>
+            <div class="cs-grid2">
+              <label class="cs-field cs-field-inline">
+                <input type="checkbox" id="stAutoBackup" checked />
+                <span class="cs-inline-text">执行规则前自动备份</span>
+              </label>
+              <div class="cs-field">
+                <span class="cs-test-result" id="stTestResult">尚未测试连接</span>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <div class="cs-card">
+          <div class="cs-card-head">
+            <h2 class="cs-card-title">自定义刮削源</h2>
+            <div class="cs-card-actions">
+              <button type="button" class="cs-btn" id="stAddSource">+ 新增刮削源</button>
+            </div>
+          </div>
+          <div class="cs-sources" id="stSources"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div class="cs-toast-wrap" id="csToast" aria-live="polite"></div>
+<div class="cs-modal-root" id="csModalRoot" hidden></div>
+
+<script src="./app.js"></script>
+</body>
+</html>
