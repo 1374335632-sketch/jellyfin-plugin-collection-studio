@@ -2,37 +2,29 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>合集工坊</title>
 <link rel="stylesheet" href="./app.css" />
 </head>
 <body>
-<div class="cs-app" id="csApp">
-  <aside class="cs-sidebar" id="csSidebar">
-    <div class="cs-brand">
-      <span class="cs-brand-mark">合</span>
-      <span class="cs-brand-text">合集工坊</span>
-    </div>
-    <nav class="cs-nav" id="csNavList" aria-label="主导航">
-      <button type="button" class="cs-nav-item is-active" data-tab="overview" aria-current="page" onclick="if(window.CS){window.CS.nav('overview', this);}">总览</button>
-      <button type="button" class="cs-nav-item" data-tab="rules" onclick="if(window.CS){window.CS.nav('rules', this);}">分类规则</button>
-      <button type="button" class="cs-nav-item" data-tab="collections" onclick="if(window.CS){window.CS.nav('collections', this);}">合集管理</button>
-      <button type="button" class="cs-nav-item" data-tab="rename" onclick="if(window.CS){window.CS.nav('rename', this);}">改名对照</button>
-      <button type="button" class="cs-nav-item" data-tab="backups" onclick="if(window.CS){window.CS.nav('backups', this);}">备份与还原</button>
-      <button type="button" class="cs-nav-item" data-tab="settings" onclick="if(window.CS){window.CS.nav('settings', this);}">设置</button>
-    </nav>
-    <div class="cs-sidebar-foot" id="csSidebarFoot">Jellyfin 插件 · 全中文前端</div>
-  </aside>
+<div class="cs-page page type-interior" id="csPageRoot" data-role="page" data-cs-root="1">
+  <div data-role="content">
+    <div class="content-primary">
 
-  <main class="cs-main">
-    <header class="cs-topbar">
-      <div class="cs-topbar-title">
-        <h1 class="cs-page-title" id="csPageTitle">总览</h1>
-        <p class="cs-page-sub" id="csPageSub">插件运行状态与索引概况</p>
+      <div class="cs-tabs" id="csNavList" role="tablist" aria-label="合集工坊">
+        <button type="button" class="cs-nav-item is-active" data-tab="overview" aria-current="page" onclick="if(window.CS){window.CS.nav('overview', this);}">总览</button>
+        <button type="button" class="cs-nav-item" data-tab="rules" onclick="if(window.CS){window.CS.nav('rules', this);}">分类规则</button>
+        <button type="button" class="cs-nav-item" data-tab="collections" onclick="if(window.CS){window.CS.nav('collections', this);}">合集管理</button>
+        <button type="button" class="cs-nav-item" data-tab="rename" onclick="if(window.CS){window.CS.nav('rename', this);}">改名对照</button>
+        <button type="button" class="cs-nav-item" data-tab="backups" onclick="if(window.CS){window.CS.nav('backups', this);}">备份与还原</button>
+        <button type="button" class="cs-nav-item" data-tab="settings" onclick="if(window.CS){window.CS.nav('settings', this);}">设置</button>
       </div>
-    </header>
 
-    <div class="cs-content">
+      <div class="cs-title-row">
+        <h2 class="cs-page-title" id="csPageTitle">总览</h2>
+        <span class="cs-page-sub" id="csPageSub">插件运行状态与索引概况</span>
+      </div>
+
+      <div class="cs-content">
       <section class="cs-view is-active" id="view-overview" data-view="overview">
         <div class="cs-status-grid" id="ovStatusGrid"></div>
 
@@ -80,7 +72,7 @@
             <table class="cs-table">
               <thead>
                 <tr>
-                  <th>规则名称</th><th>分类模式</th><th>合集名模板</th><th>条件摘要</th>
+                  <th>规则名称</th><th>分类模式</th><th>媒体库</th><th>合集名模板</th><th>条件摘要</th>
                   <th>排序</th><th>封面来源</th><th>更新时间</th><th>操作</th>
                 </tr>
               </thead>
@@ -120,6 +112,11 @@
               </label>
             </div>
             <p class="cs-hint">「目标合集名」优先，为空时使用「合集名模板」；其中 {value} 会被替换为分组值（演员名 / 厂商名 / 类型名 / 年份）。</p>
+
+            <div class="cs-field cs-field-block">
+              <span class="cs-label">参与分类的媒体库 <span class="cs-hint-inline">（不选＝全部媒体库）</span></span>
+              <div class="cs-lib-picker" id="rfLibraryList"></div>
+            </div>
 
             <div class="cs-cond-wrap" id="rfConditionsWrap" hidden>
               <div class="cs-cond-head">
@@ -339,12 +336,22 @@
           <div class="cs-sources" id="stSources"></div>
         </div>
       </section>
+      </div>
+
     </div>
+  </div>
+</div>
+
+</div>
   </main>
 </div>
 
 <div class="cs-toast-wrap" id="csToast" aria-live="polite"></div>
 <div class="cs-modal-root" id="csModalRoot" hidden></div>
+
+<script src="./app.js"></script>
+</body>
+</html>
 
 <script src="./app.js"></script>
 </body>

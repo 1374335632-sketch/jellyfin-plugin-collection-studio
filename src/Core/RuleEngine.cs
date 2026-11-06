@@ -45,6 +45,15 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
 
         private static string Carriers() => "厂商(片商)";
 
+        /// <summary>规则未限定媒体库时视为全部媒体库。</summary>
+        public static bool InSelectedLibraries(IndexItemDoc item, RuleDoc rule)
+        {
+            var ids = rule?.LibraryIds;
+            if (ids == null || ids.Count == 0) return true;
+            var itemLib = item?.LibraryId ?? string.Empty;
+            return ids.Any(x => string.Equals(x, itemLib, StringComparison.OrdinalIgnoreCase));
+        }
+
         public static FieldInfo FindField(string key) =>
             Fields.FirstOrDefault(f => string.Equals(f.Key, key, StringComparison.OrdinalIgnoreCase));
 
@@ -136,7 +145,7 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
         /// <summary>按规则把影片分组。自定义高级规则只有一个组；按人/厂商/年份等按值分组。</summary>
         public static List<KeyValuePair<string, List<IndexItemDoc>>> Group(IList<IndexItemDoc> items, RuleDoc rule)
         {
-            var filtered = items.Where(i => PassesAllConditions(i, rule.Conditions)).ToList();
+            var filtered = items.Where(i => InSelectedLibraries(i, rule) && PassesAllConditions(i, rule.Conditions)).ToList();
             var groups = new List<KeyValuePair<string, List<IndexItemDoc>>>();
             string groupField;
             switch ((rule.Mode ?? "person").ToLowerInvariant())

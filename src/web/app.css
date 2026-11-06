@@ -37,127 +37,7 @@
 
 * { box-sizing: border-box; }
 
-html, body {
-  margin: 0;
-  padding: 0;
-  min-height: 100%;
-  font-family: "Segoe UI", "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", system-ui, sans-serif;
-  font-size: 14px;
-  line-height: 1.55;
-}
-
-body {
-  background: transparent;
-  color: var(--cs-fg);
-  -webkit-font-smoothing: antialiased;
-}
-
-.cs-app {
-  display: flex;
-  min-height: 100vh;
-  background: var(--cs-bg);
-  color: var(--cs-fg);
-}
-
-/* ---------------- 侧边导航 ---------------- */
-.cs-sidebar {
-  flex: 0 0 208px;
-  width: 208px;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 18px 12px;
-  background: var(--cs-surface);
-  border-right: 1px solid var(--cs-border);
-}
-
-.cs-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 2px 8px 12px;
-  border-bottom: 1px solid var(--cs-border);
-}
-
-.cs-brand-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  background: var(--cs-accent);
-  color: #fff;
-  font-weight: 700;
-  font-size: 15px;
-}
-
-.cs-brand-text {
-  font-weight: 600;
-  font-size: 15px;
-  letter-spacing: 1px;
-}
-
-.cs-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.cs-nav-item {
-  appearance: none;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--cs-fg-dim);
-  text-align: left;
-  padding: 9px 12px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-family: inherit;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-  white-space: nowrap;
-}
-
-.cs-nav-item:hover {
-  background: var(--cs-surface-2);
-  color: var(--cs-fg);
-}
-
-.cs-nav-item.is-active {
-  background: var(--cs-accent-soft);
-  border-color: var(--cs-accent);
-  color: var(--cs-fg);
-  font-weight: 600;
-}
-
-.cs-sidebar-foot {
-  margin-top: auto;
-  padding: 10px 8px 0;
-  border-top: 1px solid var(--cs-border);
-  color: var(--cs-fg-dim);
-  font-size: 12px;
-}
-
 /* ---------------- 主区 ---------------- */
-.cs-main {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.cs-topbar {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 18px 24px 12px;
-}
-
 .cs-page-title {
   margin: 0;
   font-size: 20px;
@@ -814,32 +694,6 @@ body {
 
 /* ---------------- 响应式 ---------------- */
 @media (max-width: 900px) {
-  .cs-app { flex-direction: column; }
-
-  .cs-sidebar {
-    position: static;
-    width: 100%;
-    height: auto;
-    flex: none;
-    flex-direction: row;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border-right: none;
-    border-bottom: 1px solid var(--cs-border);
-    overflow-x: auto;
-  }
-
-  .cs-brand { padding: 0 10px 0 0; border-bottom: none; border-right: 1px solid var(--cs-border); flex: none; }
-  .cs-brand-text { display: none; }
-
-  .cs-nav { flex-direction: row; gap: 6px; flex-wrap: nowrap; }
-
-  .cs-nav-item { padding: 7px 12px; font-size: 13px; }
-
-  .cs-sidebar-foot { display: none; }
-
-  .cs-topbar { padding: 14px 14px 8px; }
   .cs-content { padding: 4px 14px 28px; }
 
   .cs-grid2, .cs-grid3 { grid-template-columns: minmax(0, 1fr); }
@@ -859,70 +713,91 @@ body {
   .cs-card { padding: 12px; }
 }
 
-/* Jellyfin 控制台的 backgroundContainer 是一层全屏覆盖层，插件页若没有自己的层叠上下文，
-   点击会被那层吃掉。这里给插件页根节点建立独立层叠上下文并压到覆盖层之上。 */
+/* ---------- Jellyfin 控制台插件设置页内的外观 ---------- */
+/* 本插件作为普通插件设置页嵌在控制台里，只影响自己的容器，不改宿主页面。 */
 .cs-page {
-  position: relative !important;
-  z-index: 1500 !important;
-  pointer-events: auto !important;
-}
-/* Jellyfin 控制台会给每个页面根节点加上 mainAnimatedPage 并套用自己的定位规则
-   （mainAnimatedPage:not(.metadataEditorPage){left:240px}），我们这份已经在一个定位好的容器里，
-   再叠加会被推出视角、右侧内容被截断。这里把定位重置为相对父容器铺满。 */
-/* 控制台把插件页放在 left:240px 的容器里，插件自身只需铺满该容器，
-   表格与卡片按可用宽度自适应，避免内容溢出到视角之外。 */
-.cs-app {
-  width: 100% !important;
-  max-width: 100% !important;
-  overflow-x: hidden;
+  font-family: "Segoe UI", "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--cs-fg);
 }
 
-.cs-main {
-  min-width: 0;
+.cs-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--cs-border);
+}
+
+.cs-nav-item {
+  appearance: none;
+  border: 1px solid transparent;
+  background: var(--cs-surface-2);
+  color: var(--cs-fg-dim);
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.cs-nav-item:hover { background: var(--cs-surface-3); color: var(--cs-fg); }
+
+.cs-nav-item.is-active {
+  background: var(--cs-accent-soft);
+  border-color: var(--cs-accent);
+  color: var(--cs-fg);
+  font-weight: 600;
 }
 
 .cs-content {
-  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-.cs-table-wrap,
-.cs-card table {
-  display: block;
-  max-width: 100%;
-  overflow-x: auto;
+.cs-title-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+
+.cs-page-title { margin: 0; font-size: 17px; font-weight: 600; }
+
+.cs-page-sub { color: var(--cs-fg-dim); font-size: 13px; }
+/* ---------- 规则里的媒体库选择 ---------- */
+.cs-field-block { display: flex; flex-direction: column; gap: 6px; }
+
+.cs-lib-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--cs-border);
+  border-radius: 8px;
+  background: var(--cs-surface-2);
 }
 
-.cs-status-grid {
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+.cs-lib-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
 }
-/* 控制台把自己的主内容区起点当作 left:240px，而我们这份插件页已经位于该内容区内部，
-   再叠加 240px 会被整体右移出视角。只修正横向偏移，其余定位规则保持宿主原样。 */
-.cs-page.mainAnimatedPage,
-.cs-page,
-.mainAnimatedPage[data-role="page"] {
-  left: 0 !important;
-  right: 0 !important;
+
+.cs-lib-item:hover { background: var(--cs-surface-3); }
+
+.cs-lib-item input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  accent-color: var(--cs-accent);
 }
-/* 弹窗层以插件容器铺满可见区域：宿主会给页面根加 contain，
-   position:fixed 的参照系因此变成插件容器而不是窗口，这里统一改成相对插件容器绝对定位。 */
-.cs-modal-root { position: static !important; }
-.cs-app { position: relative; }
-.cs-layer {
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  min-height: 100% !important;
-}
-/* 弹窗层挂在 body 上，因此用视口定位即可；同时压过 Jellyfin 控制台自身的浮层 */
-.cs-modal-host { position: static; }
-.cs-layer {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  min-height: 0 !important;
-  z-index: 2000 !important;
-}
+
+.cs-lib-name { font-weight: 600; }
+
+.cs-lib-meta { color: var(--cs-fg-dim); font-size: 12px; margin-left: auto; }
+
+.cs-hint-inline { color: var(--cs-fg-dim); font-weight: 400; font-size: 12px; }

@@ -17,9 +17,9 @@ const NAME = '合集工坊';
 const OWNER = '1374335632-sketch';
 
 const variants = [
-  { file: 'Jellyfin.Plugin.CollectionStudio-1.0.0.2-net10.0.zip', version: '1.0.0.2', abi: '12.4.0.0', manifest: 'manifest-12.json', note: 'Jellyfin 12.x' },
-  { file: 'Jellyfin.Plugin.CollectionStudio-1.0.0.1-net9.0.zip', version: '1.0.0.1', abi: '10.11.0.0', manifest: 'manifest-10.json', note: 'Jellyfin 10.10 / 10.11' },
-  { file: 'Jellyfin.Plugin.CollectionStudio-1.0.0.0-net8.0.zip', version: '1.0.0.0', abi: '10.9.0.0', manifest: 'manifest-109.json', note: 'Jellyfin 10.9' }
+  { file: 'Jellyfin.Plugin.CollectionStudio-1.1.0.2-net10.0.zip', version: '1.1.0.2', abi: '12.4.0.0', manifest: 'manifest-12.json', note: 'Jellyfin 12.x' },
+  { file: 'Jellyfin.Plugin.CollectionStudio-1.1.0.1-net9.0.zip', version: '1.1.0.1', abi: '10.11.0.0', manifest: 'manifest-10.json', note: 'Jellyfin 10.10 / 10.11' },
+  { file: 'Jellyfin.Plugin.CollectionStudio-1.1.0.0-net8.0.zip', version: '1.1.0.0', abi: '10.9.0.0', manifest: 'manifest-109.json', note: 'Jellyfin 10.9' }
 ];
 
 for (const v of variants) {
@@ -40,7 +40,7 @@ for (const v of variants) {
     imageUrl: '',
     versions: [{
       version: v.version,
-      changelog: '按演员/导演/厂商/类型/年份/复杂条件生成合集；支持 MetaTube 与自定义刮削源写真封面；改名对照表与 Excel 导出；备份与按时间段还原。',
+      changelog: '1.1：设置页改为 Jellyfin 控制台内部页面（不再接管整页）；分类规则新增「参与分类的媒体库」选择；适配 Jellyfin 12.4 授权方式。',
       targetAbi: v.abi,
       sourceUrl: base + '/dist/' + v.file,
       checksum: checksum,

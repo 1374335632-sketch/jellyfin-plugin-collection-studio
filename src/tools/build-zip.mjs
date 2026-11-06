@@ -12,7 +12,7 @@ const tfm = process.argv[2] || 'net9.0';
 const pluginId = 'c7d1a2b4-9e53-4f18-8a2c-6b3d5e7f9041';
 const name = 'Jellyfin.Plugin.CollectionStudio';
 const targetAbi = tfm === 'net8.0' ? '10.9.0.0' : (tfm === 'net9.0' ? '10.11.0.0' : '12.4.0.0');
-const version = tfm === 'net8.0' ? '1.0.0.0' : (tfm === 'net9.0' ? '1.0.0.1' : '1.0.0.2');
+const version = tfm === 'net8.0' ? '1.1.0.0' : (tfm === 'net9.0' ? '1.1.0.1' : '1.1.0.2');
 
 const outDir = join(srcDir, '_out-' + tfm);
 const stage = join(root, 'dist', 'stage-' + tfm);
@@ -29,7 +29,7 @@ for (const f of [name + '.dll', 'LiteDB.dll']) {
 
 const meta = {
   category: 'General',
-  changelog: '首个版本：按演员/导演/厂商/类型/年份/复杂条件生成合集，支持刮削写真封面、改名对照表、Excel 导出与备份还原。',
+  changelog: '1.1：插件页改为 Jellyfin 控制台内部设置页（不再接管整页）；分类规则新增「参与分类的媒体库」选择；Jellyfin 12.4 授权方式适配。',
   description: '按元数据自动生成合集：演员/导演写真封面、高级条件规则、改名对照表、备份还原，全中文界面。',
   guid: pluginId,
   name: '合集工坊',

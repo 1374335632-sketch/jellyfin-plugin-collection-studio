@@ -117,6 +117,20 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
         [HttpGet("Fields")]
         public ActionResult GetFields() => Ok(RuleEngine.Fields);
 
+        /// <summary>媒体库列表：规则里用来限定分类范围。</summary>
+        [HttpGet("Libraries")]
+        public ActionResult GetLibraries()
+        {
+            using var store = Open();
+            var libs = MakeService().Reader.GetLibraries();
+            var index = store.AllItems();
+            foreach (var lib in libs)
+            {
+                lib.ItemCount = index.Count(i => string.Equals(i.LibraryId, lib.Id, StringComparison.OrdinalIgnoreCase));
+            }
+            return Ok(libs);
+        }
+
         // ---------------------------------------------------------------- 规则
 
         [HttpGet("Rules")]

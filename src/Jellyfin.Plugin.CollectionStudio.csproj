@@ -31,6 +31,6 @@
   </ItemGroup>
 
   <Target Name="CollectionStudioInlinePage" BeforeTargets="BeforeBuild" Condition="Exists('web/index.html')">
-    <Exec Command="&quot;node&quot; &quot;$(MSBuildProjectDirectory)\tools\inline.mjs&quot;" ContinueOnError="false" />
+    <Exec Command="&quot;I:\Program Files\nodejs\node.exe&quot; &quot;$(MSBuildProjectDirectory)\tools\inline.mjs&quot;" ContinueOnError="false" />
   </Target>
 </Project>

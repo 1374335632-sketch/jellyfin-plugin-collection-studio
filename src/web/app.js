@@ -337,13 +337,10 @@
   // 模态层
   // ===========================================================
   function openDialog(opts) {
-    // 宿主给插件页加了 contain:layout，position:fixed 会相对该容器计算而错位；
-    // 把弹窗层挂到 body 上即可获得正常的视口定位。
-    var root = document.querySelector('.cs-modal-host');
-    if (!root) {
-      root = el('div', 'cs-modal-host');
-      document.body.appendChild(root);
-    }
+    // 弹窗挂在本插件自己的容器里，绝不往宿主 body 追加节点（那会污染整个控制台页面）。
+    var root = $('csModalRoot');
+    if (!root) { return null; }
+    root.hidden = false;
 
     var layer = el('div', 'cs-layer');
     var backdrop = el('div', 'cs-backdrop');
@@ -388,7 +385,7 @@
       layer.classList.remove('is-open');
       setTimeout(function () {
         if (layer.parentNode) { layer.parentNode.removeChild(layer); }
-        if (!root.childNodes.length && root.parentNode) { root.parentNode.removeChild(root); }
+        if (!root.childNodes.length) { root.hidden = true; }
       }, 200);
       if (opts.onClose) { opts.onClose(); }
     }
@@ -505,6 +502,7 @@
     backups: [],
     settings: null,
     tasks: [],
+    libraries: [],
     currentTab: 'overview'
   };
 
@@ -779,7 +777,7 @@
     var tbody = $('ruleListBody');
     clear(tbody);
     if (!state.rules.length) {
-      tableMessage(tbody, '暂无数据', 8);
+      tableMessage(tbody, '暂无数据', 9);
       return;
     }
     state.rules.forEach(function (rule) {
@@ -791,6 +789,7 @@
       tr.appendChild(nameCell);
 
       tr.appendChild(el('td', '', modeLabel(modeChoiceOf(rule))));
+      tr.appendChild(el('td', 'cs-ellipsis', librarySummary(rule.libraryIds)));
       tr.appendChild(el('td', 'cs-ellipsis', rule.targetName || rule.titleTemplate || '—'));
       tr.appendChild(el('td', 'cs-ellipsis', conditionSummary(rule)));
       tr.appendChild(el('td', '', sortLabel(rule.sortBy) + ' / ' + (rule.sortDesc ? '降序' : '升序')));
@@ -809,13 +808,25 @@
     });
   }
 
+  // 规则限定的媒体库摘要
+  function librarySummary(ids) {
+    if (!ids || !ids.length) { return '全部媒体库'; }
+    if (!state.libraries || !state.libraries.length) { return ids.length + ' 个媒体库'; }
+    var names = ids.map(function (id) {
+      var hit = null;
+      state.libraries.forEach(function (l) { if (l.id === id) { hit = l; } });
+      return hit ? hit.name : '已删除的媒体库';
+    });
+    return names.join('、');
+  }
+
   function loadRules() {
-    tableMessage($('ruleListBody'), '加载中…', 8);
+    tableMessage($('ruleListBody'), '加载中…', 9);
     loadFields().then(function () { return getJson('Rules'); }).then(function (list) {
       state.rules = Array.isArray(list) ? list : [];
       renderRules();
     }, function (err) {
-      tableMessage($('ruleListBody'), '加载失败', 8);
+      tableMessage($('ruleListBody'), '加载失败', 9);
       failToast(err);
     });
   }
@@ -888,6 +899,55 @@
     $('rfConditionsWrap').hidden = !isCustom;
   }
 
+  // 媒体库列表（规则里限定分类范围用），只加载一次并缓存
+  function renderLibraryPicker(selected) {
+    var box = $('rfLibraryList');
+    if (!box) { return; }
+    clear(box);
+    var libs = state.libraries || [];
+    if (!libs.length) {
+      box.appendChild(el('p', 'cs-hint', '暂无媒体库：请先在控制台「媒体库」里添加影片库。'));
+      return;
+    }
+    var chosen = {};
+    (selected || []).forEach(function (id) { chosen[id] = true; });
+
+    libs.forEach(function (lib) {
+      var row = el('label', 'cs-lib-item');
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = lib.id;
+      cb.checked = Object.prototype.hasOwnProperty.call(chosen, lib.id);
+      var text = el('span', 'cs-lib-name', lib.name || '(未命名媒体库)');
+      var meta = el('span', 'cs-lib-meta', (lib.collectionType === 'movies' ? '电影' : (lib.collectionType || '未指定')) + ' · 已索引 ' + (lib.itemCount || 0) + ' 条');
+      row.appendChild(cb);
+      row.appendChild(text);
+      row.appendChild(meta);
+      box.appendChild(row);
+    });
+  }
+
+  function selectedLibraryIds() {
+    var box = $('rfLibraryList');
+    if (!box) { return []; }
+    var out = [];
+    Array.prototype.forEach.call(box.querySelectorAll('input[type="checkbox"]'), function (cb) {
+      if (cb.checked) { out.push(cb.value); }
+    });
+    return out;
+  }
+
+  function ensureLibraries() {
+    if (state.libraries && state.libraries.length) { return Promise.resolve(state.libraries); }
+    return getJson('Libraries').then(function (list) {
+      state.libraries = Array.isArray(list) ? list : [];
+      return state.libraries;
+    }, function (err) {
+      state.libraries = [];
+      return [];
+    });
+  }
+
   function openRuleForm(rule) {
     var wrap = $('ruleFormWrap');
     wrap.hidden = false;
@@ -945,6 +1005,8 @@
     (r.conditions || []).forEach(function (c) { addConditionRow(c); });
     renderConditionEmpty();
     syncConditionsVisibility();
+    renderLibraryPicker(r.libraryIds || []);
+    ensureLibraries().then(function () { renderLibraryPicker(r.libraryIds || []); });
 
     wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
@@ -973,6 +1035,7 @@
     var body = {
       name: $('rfName').value.trim(),
       enabled: $('rfEnabled').checked,
+      libraryIds: selectedLibraryIds(),
       mode: chosen.mode,
       personType: chosen.personType || 'Actor',
       targetName: $('rfTargetName').value.trim(),
@@ -1492,7 +1555,7 @@
     var tbody = $('bkListBody');
     clear(tbody);
     if (!state.backups.length) {
-      tableMessage(tbody, '暂无数据', 8);
+      tableMessage(tbody, '暂无数据', 9);
       return;
     }
     state.backups.forEach(function (b) {

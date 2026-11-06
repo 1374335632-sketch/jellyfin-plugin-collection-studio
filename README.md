@@ -37,17 +37,21 @@ URL ：https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/
 
 | Jellyfin | 包名 |
 |---|---|
-| 12.0 ~ 12.4 | `Jellyfin.Plugin.CollectionStudio-1.0.0.2-net10.0.zip` |
-| 10.10 / 10.11 | `Jellyfin.Plugin.CollectionStudio-1.0.0.1-net9.0.zip` |
-| 10.9 | `Jellyfin.Plugin.CollectionStudio-1.0.0.0-net8.0.zip` |
+| 12.0 ~ 12.4 | `Jellyfin.Plugin.CollectionStudio-1.1.0.2-net10.0.zip` |
+| 10.10 / 10.11 | `Jellyfin.Plugin.CollectionStudio-1.1.0.1-net9.0.zip` |
+| 10.9 | `Jellyfin.Plugin.CollectionStudio-1.1.0.0-net8.0.zip` |
 
 ## 功能
 
-1. **分类规则**：按演员 / 导演 / 厂商 / 类型 / 年份 / 高级自定义条件生成合集，每个值单独一个合集，可调排序与升降序。
+1. **分类规则**：按演员 / 导演 / 厂商 / 类型 / 年份 / 高级自定义条件生成合集，每个值单独一个合集，可调排序与升降序；每条规则可指定**参与分类的媒体库**（不选＝全部媒体库）。
 2. **写真封面**：从 MetaTube（GFriends / XsList）或任意自定义刮削源搜刮演员/导演写真，每个合集可自由挑选封面。
 3. **高级规则**：16 个元数据字段 × 8 种运算符（等于/不等于/包含/不包含/大于/小于/大于等于/小于等于/开头是），多条件与/或组合。
 4. **改名对照表**：路径 / 原始名称 / Jellyfin 名称 / 类型 / 年份 / 所属合集，每 50 条分页，按名称筛选，导出 Excel（下载到电脑或保存到服务器）。
 5. **备份与还原**：全部操作落库（LiteDB），删除自动备份，还原时按时间段挑选备份并二次确认。
+
+## 关于界面形态
+
+插件打开后就是 Jellyfin 控制台里的一页设置页（左侧有自己的标签条），不会单独占用整页、也不会改动 Jellyfin 自身的界面样式。
 
 ## 配置
 

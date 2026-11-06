@@ -9,11 +9,11 @@
     "imageUrl": "",
     "versions": [
       {
-        "version": "1.0.0.1",
-        "changelog": "按演员/导演/厂商/类型/年份/复杂条件生成合集；支持 MetaTube 与自定义刮削源写真封面；改名对照表与 Excel 导出；备份与按时间段还原。",
+        "version": "1.1.0.1",
+        "changelog": "1.1：设置页改为 Jellyfin 控制台内部页面（不再接管整页）；分类规则新增「参与分类的媒体库」选择；适配 Jellyfin 12.4 授权方式。",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/dist/Jellyfin.Plugin.CollectionStudio-1.0.0.1-net9.0.zip",
-        "checksum": "55a4f399495bc8b48697840e7f0dfaf0",
+        "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/dist/Jellyfin.Plugin.CollectionStudio-1.1.0.1-net9.0.zip",
+        "checksum": "759e89b77ada356dd0a73c92672aad06",
         "timestamp": "2026-11-07T00:00:00Z"
       }
     ]

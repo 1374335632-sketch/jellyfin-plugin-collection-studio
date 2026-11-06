@@ -45,6 +45,8 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
         [JsonPropertyName("id")] public string Id { get; set; } = string.Empty;
         [JsonPropertyName("name")] public string Name { get; set; } = "新规则";
         [JsonPropertyName("enabled")] public bool Enabled { get; set; } = true;
+        /// <summary>参与分类的媒体库 Id 列表；空表示全部媒体库。</summary>
+        [JsonPropertyName("libraryIds")] public List<string> LibraryIds { get; set; } = new List<string>();
         [JsonPropertyName("mode")] public string Mode { get; set; } = "person";
         [JsonPropertyName("personType")] public string PersonType { get; set; } = "Actor";
         [JsonPropertyName("targetName")] public string TargetName { get; set; } = string.Empty;
@@ -66,6 +68,7 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
             return new RuleDoc
             {
                 Id = Id, Name = Name, Enabled = Enabled, Mode = Mode, PersonType = PersonType,
+                LibraryIds = new List<string>(LibraryIds ?? new List<string>()),
                 TargetName = TargetName, TitleTemplate = TitleTemplate,
                 Conditions = Conditions.ConvertAll(c => new RuleCondition { Field = c.Field, Op = c.Op, Value = c.Value, Conjunction = c.Conjunction }),
                 SortBy = SortBy, SortDesc = SortDesc, CoverMode = CoverMode, CoverUrl = CoverUrl, CoverProvider = CoverProvider,
@@ -115,6 +118,8 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
         [JsonPropertyName("providerIds")] public Dictionary<string, string> ProviderIds { get; set; } = new Dictionary<string, string>();
         [JsonPropertyName("container")] public string Container { get; set; } = string.Empty;
         [JsonPropertyName("fileName")] public string FileName { get; set; } = string.Empty;
+        [JsonPropertyName("libraryId")] public string LibraryId { get; set; } = string.Empty;
+        [JsonPropertyName("libraryName")] public string LibraryName { get; set; } = string.Empty;
         [JsonPropertyName("indexedAt")] public DateTime IndexedAt { get; set; } = DateTime.Now;
     }
 
@@ -187,6 +192,14 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
         [JsonPropertyName("source")] public string Source { get; set; } = string.Empty;
         [JsonPropertyName("candidates")] public List<CoverCandidate> Candidates { get; set; } = new List<CoverCandidate>();
         [JsonPropertyName("message")] public string Message { get; set; } = string.Empty;
+    }
+
+    public sealed class LibraryInfo
+    {
+        [JsonPropertyName("id")] public string Id { get; set; } = string.Empty;
+        [JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
+        [JsonPropertyName("collectionType")] public string CollectionType { get; set; } = string.Empty;
+        [JsonPropertyName("itemCount")] public int ItemCount { get; set; }
     }
 
     public sealed class FieldInfo
