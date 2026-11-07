@@ -1302,13 +1302,17 @@
       var table = el('table', 'cs-table');
       var thead = el('thead');
       var htr = el('tr');
-      ['目录', '存在', '可写', '结论与建议'].forEach(function (t) { htr.appendChild(el('th', '', t)); });
+      ['目录', '所在挂载点', '只读', '存在', '可写', '结论与建议'].forEach(function (t) { htr.appendChild(el('th', '', t)); });
       thead.appendChild(htr);
       table.appendChild(thead);
       var tb = el('tbody');
       report.forEach(function (r) {
         var tr = el('tr');
         tr.appendChild(el('td', 'cs-ellipsis', r.directory || ''));
+        tr.appendChild(el('td', 'cs-ellipsis', (r.mountPoint || '—') + (r.fileSystem ? ' (' + r.fileSystem + ')' : '')));
+        var roCell = el('td', '', r.mountReadOnly ? '是' : '否');
+        if (r.mountReadOnly) { roCell.style.color = '#e5484d'; roCell.style.fontWeight = '600'; }
+        tr.appendChild(roCell);
         tr.appendChild(el('td', '', r.exists ? '是' : '否'));
         tr.appendChild(el('td', '', r.writable ? '是' : '否'));
         var cell = el('td', 'cs-wrap-cell');

@@ -958,6 +958,49 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
         /// 写权限诊断：对指定媒体库的实际目录做真实的写入测试，
         /// 判断是「只读挂载」「无写权限」还是「目录不存在」，并返回可执行的结论。
         /// </summary>
+
+        /// <summary>
+        /// 读取容器内的 /proc/mounts，找出某个路径实际落在哪个挂载点、是否为只读。
+        /// 这是判断「挂载参数说 RW=true 但实际只读」的唯一可靠办法：
+        /// Docker 记录的 RW 只是 bind 参数，不反映底层文件系统（例如 OpenWrt 的根是只读 squashfs）。
+        /// </summary>
+        private static (string mountPoint, bool readOnly, string fsType) ResolveMount(string path)
+        {
+            try
+            {
+                var full = System.IO.Path.GetFullPath(path ?? string.Empty);
+                var lines = System.IO.File.ReadAllLines("/proc/mounts");
+                string bestPoint = string.Empty;
+                bool bestRo = false;
+                string bestType = string.Empty;
+
+                foreach (var line in lines)
+                {
+                    var parts = line.Split(' ');
+                    if (parts.Length < 4) continue;
+                    var point = parts[1].Replace("\\040", " ");
+                    var opts = parts[3];
+                    var fsType = parts[2];
+
+                    // 路径必须停在该挂载点之下（或正好是它），取最长前缀匹配
+                    var under = point == "/"
+                        ? true
+                        : (full == point || full.StartsWith(point.TrimEnd('/') + "/", StringComparison.Ordinal));
+                    if (!under) continue;
+                    if (point.Length < bestPoint.Length) continue;
+
+                    bestPoint = point;
+                    bestType = fsType;
+                    bestRo = opts.StartsWith("ro,") || opts == "ro" || opts.Contains(",ro,") || opts.EndsWith(",ro");
+                }
+
+                return (bestPoint, bestRo, bestType);
+            }
+            catch
+            {
+                return (string.Empty, false, string.Empty);
+            }
+        }
         [HttpGet("Rename/WriteCheck")]
         public ActionResult WriteCheck([FromQuery] string? libraryId = null)
         {
@@ -1006,9 +1049,26 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
                 {
                     var dirExists = System.IO.Directory.Exists(dir);
                     entry["exists"] = dirExists;
+
+                    // 先给出该目录实际所在的挂载点与只读标记，这对判断「RW=true 却报只读」最关键
+                    var mount = ResolveMount(dir);
+                    entry["mountPoint"] = mount.mountPoint;
+                    entry["mountReadOnly"] = mount.readOnly;
+                    entry["fileSystem"] = mount.fsType;
+
                     if (!dirExists)
                     {
                         entry["verdict"] = "目录不存在";
+                        report.Add(entry);
+                        continue;
+                    }
+
+                    if (mount.readOnly)
+                    {
+                        entry["verdict"] = "该目录所在挂载点在容器内是只读（" + mount.mountPoint + "，" + mount.fsType + "）";
+                        entry["detail"] = "Docker 的 RW=true 只是 bind 参数，不代表底层文件系统可写。"
+                                        + "请把媒体目录挂到真正可写的位置（例如 OpenWrt 的 /overlay 或 /mnt 下的可写分区），"
+                                        + "而不是把只读的根文件系统挂进容器。";
                         report.Add(entry);
                         continue;
                     }
