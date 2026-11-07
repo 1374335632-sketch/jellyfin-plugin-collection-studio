@@ -10,6 +10,7 @@ Repo URL:
 
 ## Versions
 
+- 4.0.0.0  (targetAbi 10.9.0.0)
 - 3.1.0.0  (targetAbi 10.9.0.0)
 - 3.0.0.0  (targetAbi 10.9.0.0)
 - 2.1.0.0  (targetAbi 10.9.0.0)
