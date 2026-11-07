@@ -23,12 +23,20 @@
   }
 
   function $(id) {
-    var scope = connectedRoot() || document.querySelector('.cs-page, .cs-app') || document.body;
-    if (scope) {
-      var inScope = scope.querySelector('[id="' + id + '"]');
-      if (inScope) { return inScope; }
-    }
-    return document.getElementById(id);
+    // 直接按 id 取：不依赖 rootScope（它在 init 里才赋值），
+    // 这样在初始化之前绑定事件也能正确找到节点。
+    try {
+      var direct = document.getElementById(id);
+      if (direct) { return direct; }
+    } catch (e) { /* 继续尝试作用域查找 */ }
+    try {
+      var scope = connectedRoot() || document.querySelector('.pluginConfigurationPage, .cs-page, .cs-app');
+      if (scope && typeof scope.querySelector === 'function') {
+        var inScope = scope.querySelector('[id="' + id + '"]');
+        if (inScope) { return inScope; }
+      }
+    } catch (e) { /* 忽略 */ }
+    return null;
   }
 
   function $$(selector) {
@@ -40,6 +48,20 @@
     if (cls) { n.className = cls; }
     if (text !== undefined && text !== null) { n.textContent = String(text); }
     return n;
+  }
+
+  // 容错绑定：节点缺失时跳过，绝不让一个缺失 id 中断后续所有按钮的绑定。
+  var __csBindOk = 0;
+  var __csBindMiss = [];
+
+  function safeOn(id, event, handler, opts) {
+    var node = null;
+    try { node = $(id); } catch (e) { node = null; }
+    if (!node || typeof node.addEventListener !== 'function') {
+      if (__csBindMiss.indexOf(id) < 0) { __csBindMiss.push(id); }
+      return false;
+    }
+    try { node.addEventListener(event, handler, opts); __csBindOk++; return true; } catch (e) { return false; }
   }
 
   function clear(node) {
@@ -2009,7 +2031,7 @@
     document.addEventListener('pointerdown', delegated, true);
     document.addEventListener('click', delegated, true);
 
-    $('ovScanBtn').addEventListener('click', function () {
+    safeOn('ovScanBtn', 'click', function () {
       var btn = $('ovScanBtn');
       btn.disabled = true;
       sendJson('POST', 'Tasks/scan/Run', {}).then(function () {
@@ -2021,28 +2043,28 @@
         failToast(err);
       });
     });
-    $('ovTasksRefresh').addEventListener('click', loadTasks);
-    $('ovLogTaskSelect').addEventListener('change', loadTaskLog);
-    $('ovLogRefresh').addEventListener('click', loadTaskLog);
+    safeOn('ovTasksRefresh', 'click', loadTasks);
+    safeOn('ovLogTaskSelect', 'change', loadTaskLog);
+    safeOn('ovLogRefresh', 'click', loadTaskLog);
 
-    $('ruleNewBtn').addEventListener('click', function () { openRuleForm(null); });
-    $('ruleRefreshBtn').addEventListener('click', loadRules);
-    $('rfAddCondition').addEventListener('click', function () { addConditionRow(null); });
-    $('rfMode').addEventListener('change', syncConditionsVisibility);
-    $('ruleForm').addEventListener('submit', function (e) { e.preventDefault(); saveRule(); });
-    $('rfCancel').addEventListener('click', function () {
+    safeOn('ruleNewBtn', 'click', function () { openRuleForm(null); });
+    safeOn('ruleRefreshBtn', 'click', loadRules);
+    safeOn('rfAddCondition', 'click', function () { addConditionRow(null); });
+    safeOn('rfMode', 'change', syncConditionsVisibility);
+    safeOn('ruleForm', 'submit', function (e) { e.preventDefault(); saveRule(); });
+    safeOn('rfCancel', 'click', function () {
       $('ruleFormWrap').hidden = true;
       state.editingRuleId = null;
     });
-    $('rfCancelTop').addEventListener('click', function () {
+    safeOn('rfCancelTop', 'click', function () {
       $('ruleFormWrap').hidden = true;
       state.editingRuleId = null;
     });
 
-    $('colRefreshBtn').addEventListener('click', loadCollections);
+    safeOn('colRefreshBtn', 'click', loadCollections);
 
     var filterTimer = null;
-    $('rnFilter').addEventListener('input', function () {
+    safeOn('rnFilter', 'input', function () {
       if (filterTimer) { clearTimeout(filterTimer); }
       filterTimer = setTimeout(function () {
         state.rename.filter = $('rnFilter').value.trim();
@@ -2050,33 +2072,33 @@
         loadRename();
       }, 350);
     });
-    $('rnPageSize').addEventListener('change', function () {
+    safeOn('rnPageSize', 'change', function () {
       state.rename.pageSize = Number($('rnPageSize').value) || 50;
       state.rename.page = 1;
       loadRename();
     });
-    $('rnPrev').addEventListener('click', function () { goRenamePage(state.rename.page - 1); });
-    $('rnNext').addEventListener('click', function () { goRenamePage(state.rename.page + 1); });
-    $('rnJumpBtn').addEventListener('click', function () { goRenamePage(Number($('rnJump').value) || 1); });
-    $('rnJump').addEventListener('keydown', function (e) {
+    safeOn('rnPrev', 'click', function () { goRenamePage(state.rename.page - 1); });
+    safeOn('rnNext', 'click', function () { goRenamePage(state.rename.page + 1); });
+    safeOn('rnJumpBtn', 'click', function () { goRenamePage(Number($('rnJump').value) || 1); });
+    safeOn('rnJump', 'keydown', function (e) {
       if (e.key === 'Enter') { e.preventDefault(); goRenamePage(Number($('rnJump').value) || 1); }
     });
-    $('rnRefreshBtn').addEventListener('click', loadRename);
-    $('rnExportBtn').addEventListener('click', openExportDialog);
+    safeOn('rnRefreshBtn', 'click', loadRename);
+    safeOn('rnExportBtn', 'click', openExportDialog);
 
-    $('bkCreateBtn').addEventListener('click', createBackup);
-    $('bkRestoreBtn').addEventListener('click', openRestoreDialog);
-    $('bkRefreshBtn').addEventListener('click', loadBackups);
+    safeOn('bkCreateBtn', 'click', createBackup);
+    safeOn('bkRestoreBtn', 'click', openRestoreDialog);
+    safeOn('bkRefreshBtn', 'click', loadBackups);
 
-    $('stSaveBtn').addEventListener('click', saveSettings);
-    $('stTestBtn').addEventListener('click', testConnection);
-    $('stAddSource').addEventListener('click', function () {
+    safeOn('stSaveBtn', 'click', saveSettings);
+    safeOn('stTestBtn', 'click', testConnection);
+    safeOn('stAddSource', 'click', function () {
       var box = $('stSources');
       var empty = box.querySelector('.cs-sources-empty');
       if (empty) { box.removeChild(empty); }
       box.appendChild(renderSourceCard({}, box.querySelectorAll('.cs-source').length));
     });
-    $('settingsForm').addEventListener('submit', function (e) { e.preventDefault(); saveSettings(); });
+    safeOn('settingsForm', 'submit', function (e) { e.preventDefault(); saveSettings(); });
   }
 
   // ===========================================================
@@ -2185,7 +2207,9 @@
       }
       return roots.length ? roots[roots.length - 1] : null;
     };
-    rootScope = (document.currentScript && pageRootOf(document.currentScript)) || claim();
+    try {
+      rootScope = (document.currentScript && pageRootOf(document.currentScript)) || claim();
+    } catch (e) { rootScope = null; }
 
     if (rootScope) { rootScope.setAttribute('data-cs-root', '1'); }
     // 即使没能认领到根节点，也要继续绑定，否则整页都点不动
@@ -2205,11 +2229,14 @@
       rootScope.__csSwitch = function (tab) { rootScope = self; switchTab(tab); };
     }
 
-    applyTheme();
-    bindEvents();
-    var lastTab = null;
-    try { lastTab = document.documentElement.getAttribute('data-cs-tab'); } catch (e) { }
-    switchTab(TAB_META[lastTab] ? lastTab : 'overview');
+    // 每一步独立容错：任何一步失败都不能阻断事件绑定（否则整页按钮无反应）。
+    try { applyTheme(); } catch (e) { try { console.error('[Collection Studio] applyTheme 失败：', e); } catch (i) { } }
+    try { bindEvents(); } catch (e) { try { console.error('[Collection Studio] bindEvents 失败：', e); } catch (i) { } }
+    try {
+      var lastTab = null;
+      try { lastTab = document.documentElement.getAttribute('data-cs-tab'); } catch (e2) { }
+      switchTab(TAB_META[lastTab] ? lastTab : 'overview');
+    } catch (e) { try { console.error('[Collection Studio] switchTab 失败：', e); } catch (i) { } }
 
   }
 
@@ -2244,26 +2271,58 @@
     } catch (ignore) { }
   }
 
-  // 按 Jellyfin 配置页生命周期启动（MetaTube 等插件页正是这样工作的）。
-  function startOnPageShow() {
-    var root = document.querySelector('.pluginConfigurationPage, .cs-page, #csPageRoot');
-    if (!root) { return false; }
-    var run = function () { var r = boot(); if (r !== true) { reportBootFailure(r); } };
+  // 启动：12.4 的控制台是 React 版，不会触发 jQuery Mobile 的 pageshow，
+  // 因此必须在脚本执行时立即尝试启动；事件钩子只作为宿主更晚注入时的补充。
+  var booted = false;
+  function showSelfCheck(ok, err) {
     try {
-      if (window.jQuery) { window.jQuery(root).on('pageshow', run); return true; }
+      var root = document.querySelector('.pluginConfigurationPage, #csPageRoot, .cs-page');
+      if (!root || typeof root.appendChild !== 'function') { return; }
+      var old = root.querySelector ? root.querySelector('#csSelfCheck') : null;
+      if (old && old.parentNode) { old.parentNode.removeChild(old); }
+      var box = document.createElement('div');
+      box.id = 'csSelfCheck';
+      box.style.cssText = 'margin:8px 0 12px;padding:8px 12px;border-radius:8px;font-size:13px;line-height:1.5;'
+        + (ok ? 'background:rgba(61,214,140,0.15);border:1px solid #3dd68c;color:#3dd68c;'
+              : 'background:rgba(229,72,77,0.15);border:1px solid #e5484d;color:#e5484d;');
+      box.textContent = ok
+        ? ('初始化成功 · 已绑定按钮 ' + __csBindOk + ' 个' + (__csBindMiss.length ? (' · 未找到节点: ' + __csBindMiss.join(', ')) : ''))
+        : ('初始化失败：' + (err && err.message ? err.message : String(err)));
+      root.insertBefore(box, root.firstChild);
     } catch (ignore) { }
-    try {
-      root.addEventListener('pageshow', run);
-      root.addEventListener('viewshow', run);
-      if (document.readyState !== 'loading') { run(); }
-      else { document.addEventListener('DOMContentLoaded', run); }
-      return true;
-    } catch (ignore) { return false; }
   }
 
+  function runOnce() {
+    if (booted) { return true; }
+    var r = boot();
+    if (r === true) { booted = true; showSelfCheck(true, null); return true; }
+    reportBootFailure(r);
+    showSelfCheck(false, r);
+    return false;
+  }
+
+  function hookEvents() {
+    try {
+      var root = document.querySelector('.pluginConfigurationPage, .cs-page, #csPageRoot');
+      if (!root) { return; }
+      var onShow = function () { runOnce(); };
+      root.addEventListener('pageshow', onShow);
+      root.addEventListener('viewshow', onShow);
+      try { if (window.jQuery) { window.jQuery(root).on('pageshow', onShow); } } catch (ignore) { }
+    } catch (ignore) { }
+  }
+
+  // 立即启动；DOM 尚未就绪时等 DOMContentLoaded
   try {
-    if (!startOnPageShow()) { var r0 = boot(); if (r0 !== true) { reportBootFailure(r0); } }
-  } catch (e) { reportBootFailure(e); }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () { runOnce(); hookEvents(); });
+    } else {
+      runOnce();
+      hookEvents();
+    }
+  } catch (e) {
+    reportBootFailure(e);
+  }
 
 
 })();
