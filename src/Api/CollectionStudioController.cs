@@ -267,6 +267,48 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
             return Ok(result);
         }
 
+        /// <summary>规则执行诊断：把索引数量、媒体库匹配、条件过滤、分组结果逐步暴露出来。</summary>
+        [HttpGet("Rules/{id}/Diagnose")]
+        public ActionResult DiagnoseRule(string id)
+        {
+            using var store = Open();
+            var rule = store.Rules.FindById(id);
+            if (rule == null) return Error(404, "规则不存在。");
+
+            var index = store.AllItems();
+            var byLibrary = index
+                .GroupBy(i => i.LibraryId ?? string.Empty)
+                .Select(g => new { libraryId = g.Key, libraryName = g.FirstOrDefault()?.LibraryName ?? string.Empty, count = g.Count() })
+                .ToList();
+
+            var afterLib = index.Where(i => RuleEngine.InSelectedLibraries(i, rule)).ToList();
+            var afterCond = afterLib.Where(i => RuleEngine.PassesConditions(i, rule)).ToList();
+            var groups = RuleEngine.Group(index, rule);
+
+            var withActors = index.Count(i => i.Actors != null && i.Actors.Length > 0);
+            var withDirectors = index.Count(i => i.Directors != null && i.Directors.Length > 0);
+
+            return Ok(new
+            {
+                ruleId = rule.Id,
+                ruleName = rule.Name,
+                mode = rule.Mode,
+                personType = rule.PersonType,
+                libraryIds = rule.LibraryIds,
+                minItems = rule.MinItems,
+                titleTemplate = rule.TitleTemplate,
+                conditions = rule.Conditions?.Count ?? 0,
+                indexedTotal = index.Count,
+                librariesInIndex = byLibrary,
+                afterLibraryFilter = afterLib.Count,
+                afterConditions = afterCond.Count,
+                itemsWithActors = withActors,
+                itemsWithDirectors = withDirectors,
+                groupCount = groups.Count,
+                groups = groups.Take(20).Select(g => new { name = g.Key, count = g.Value.Count }).ToList()
+            });
+        }
+
         [HttpPost("Rules/{id}/Apply")]
         public ActionResult ApplyRule(string id)
         {

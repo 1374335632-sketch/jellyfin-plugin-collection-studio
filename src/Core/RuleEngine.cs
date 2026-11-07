@@ -143,6 +143,10 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
         }
 
         /// <summary>按规则把影片分组。自定义高级规则只有一个组；按人/厂商/年份等按值分组。</summary>
+        /// <summary>按规则上的条件过滤（诊断与执行共用）。</summary>
+        public static bool PassesConditions(IndexItemDoc item, RuleDoc rule)
+            => PassesAllConditions(item, rule?.Conditions ?? new List<RuleCondition>());
+
         public static List<KeyValuePair<string, List<IndexItemDoc>>> Group(IList<IndexItemDoc> items, RuleDoc rule)
         {
             var filtered = items.Where(i => InSelectedLibraries(i, rule) && PassesAllConditions(i, rule.Conditions)).ToList();
