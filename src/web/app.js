@@ -1301,7 +1301,13 @@
     mode = mode || 'both';
     var body = $('rnRunBody');
     tableMessage(body, dryRun ? '预演中…' : (mode === 'rename' ? '正在改名（只改 Jellyfin 名称）…' : (mode === 'scrape' ? '正在触发刮削…' : '执行中（先改名，再刮削）…')), 6);
-    sendJson('POST', 'Rename/Run', { dryRun: dryRun, mode: mode, rules: collectRenameRules(), libraryIds: selectedRenameLibraries() }).then(function (d) {
+    // 三个开关必须随请求一起发：用户勾选后即便没点「保存」，执行也要按当前界面选项生效
+    var flags = {
+      renamePhysicalFiles: $('rnPhysical') ? $('rnPhysical').checked : false,
+      renameWriteName: $('rnWriteName') ? $('rnWriteName').checked : true,
+      renameBeforeScrape: $('rnEnabled') ? $('rnEnabled').checked : true
+    };
+    sendJson('POST', 'Rename/Run', { dryRun: dryRun, mode: mode, rules: collectRenameRules(), libraryIds: selectedRenameLibraries(), renamePhysicalFiles: flags.renamePhysicalFiles, renameWriteName: flags.renameWriteName, renameBeforeScrape: flags.renameBeforeScrape }).then(function (d) {
       clear(body);
       // 后端返回 PascalCase（Scanned/Renamed/Steps），这里两种写法都认
       var steps = d.Steps || d.steps || [];
@@ -1311,8 +1317,9 @@
       var scraped = (d.Scraped !== undefined) ? d.Scraped : d.scraped;
       var rows = steps.filter(function (s) {
         var isRenamed = (s.Renamed !== undefined) ? s.Renamed : s.renamed;
-        var msg = s.Message || s.message || '';
-        return isRenamed || msg.indexOf('失败') >= 0;
+        var msg = String(s.Message || s.message || '');
+        // 命中改名、或明确给出了失败/未改原因的行都要展示，便于排查
+        return isRenamed || msg.indexOf('失败') >= 0 || msg.indexOf('未改') >= 0 || msg.indexOf('找不到') >= 0 || msg.indexOf('已存在') >= 0;
       });
       if (!rows.length) {
         tableMessage(body, dryRun ? '没有可重命名的条目（规则未命中任何影片名称）' : '没有条目被改名', 6);

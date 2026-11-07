@@ -192,6 +192,21 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
                 // 前端未传媒体库时，沿用设置里保存的选择
                 if (libraryIds.Count == 0 && settings.RenameLibraryIds != null) libraryIds = settings.RenameLibraryIds;
 
+                // 执行时的三个开关以请求体为准：否则用户勾选后没点「保存」，
+                // 后端仍读数据库里的旧值，导致「同时重命名磁盘文件」等选项看起来不起作用。
+                if (TryProp(payload, "renamePhysicalFiles", out var phy))
+                {
+                    settings.RenamePhysicalFiles = phy.ValueKind == System.Text.Json.JsonValueKind.True;
+                }
+                if (TryProp(payload, "renameWriteName", out var wr))
+                {
+                    settings.RenameWriteName = wr.ValueKind == System.Text.Json.JsonValueKind.True;
+                }
+                if (TryProp(payload, "renameBeforeScrape", out var en))
+                {
+                    settings.RenameBeforeScrape = en.ValueKind == System.Text.Json.JsonValueKind.True;
+                }
+
                 var providerManager = (MediaBrowser.Controller.Providers.IProviderManager)HttpContext.RequestServices
                     .GetService(typeof(MediaBrowser.Controller.Providers.IProviderManager));
                 var pipeline = new ScrapePipeline(_library, providerManager, _logger);

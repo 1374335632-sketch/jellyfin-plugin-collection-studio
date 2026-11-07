@@ -129,7 +129,19 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
 
                 if (dryRun)
                 {
-                    step.Message = "预演：将改名为「" + target + "」" + (settings.RenamePhysicalFiles ? "，并重命名磁盘文件" : string.Empty);
+                    // 预演时把「接下来会做什么」逐项写清楚，包括是否改磁盘文件
+                    var plan = "预演：Jellyfin 名称 →「" + target + "」";
+                    if (settings.RenameWriteName) { plan += "；写入名称：是"; } else { plan += "；写入名称：否"; }
+                    if (settings.RenamePhysicalFiles)
+                    {
+                        var diskNow = item.FileNameWithoutExtension ?? string.Empty;
+                        plan += "；磁盘文件：" + diskNow + " → " + target;
+                    }
+                    else
+                    {
+                        plan += "；磁盘文件：不改";
+                    }
+                    step.Message = plan;
                     result.Steps.Add(step);
                     continue;
                 }
@@ -149,20 +161,23 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
                 // 1) 先重命名磁盘文件（可选）。必须在刮削之前完成，否则 MetaTube 仍按旧文件名识别。
                 if (doRename && settings.RenamePhysicalFiles)
                 {
-                    try
+                    string moveError;
+                    string movedPath = string.Empty;
+                    try { moveError = RenamePhysicalFile(item, target, out movedPath); }
+                    catch (Exception ex) { moveError = "移动文件异常：" + ex.Message; }
+
+                    if (moveError == null)
                     {
-                        step.FileRenamed = RenamePhysicalFile(item, target);
-                        if (step.FileRenamed)
-                        {
-                            result.FilesRenamed++;
-                            logDoc.FileMoved = true;
-                            logDoc.NewPath = item.Path ?? string.Empty;
-                        }
+                        step.FileRenamed = true;
+                        result.FilesRenamed++;
+                        logDoc.FileMoved = true;
+                        logDoc.NewPath = movedPath;
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        step.Message = "重命名文件失败：" + ex.Message;
-                        _logger?.LogWarning("重命名文件失败 {Name}: {Message}", item.Name, ex.Message);
+                        step.Message = moveError;
+                        result.Log.Add("「" + step.SourceFileName + "」未改磁盘文件：" + moveError);
+                        _logger?.LogWarning("重命名磁盘文件失败 {Name}: {Reason}", item.Name, moveError);
                     }
                 }
 
@@ -212,23 +227,41 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
         }
 
         /// <summary>重命名磁盘上的媒体文件（同目录移动，避免跨盘问题）。</summary>
-        private bool RenamePhysicalFile(BaseItem item, string newName)
+        /// <summary>重命名磁盘上的媒体文件。返回 null 表示成功，否则返回失败原因（用于展示给用户）。</summary>
+        private string RenamePhysicalFile(BaseItem item, string newName, out string newPath)
         {
+            newPath = string.Empty;
             var path = item?.Path;
-            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return false;
+            if (string.IsNullOrWhiteSpace(path)) return "该条目没有磁盘路径（可能是虚拟条目或仅存在于数据库）";
+            if (!File.Exists(path))
+            {
+                // 路径存在但文件不在：给出更具体的原因，避免静默失败
+                var ext0 = Path.GetExtension(path);
+                return "磁盘上找不到该文件：" + path + "（可能是远程挂载未就绪、文件已被移走，或扩展名不匹配：" + (string.IsNullOrEmpty(ext0) ? "无" : ext0) + "）";
+            }
 
             var dir = Path.GetDirectoryName(path);
+            if (string.IsNullOrWhiteSpace(dir) || !Directory.Exists(dir)) return "所在目录不可访问：" + (dir ?? string.Empty);
+
             var ext = Path.GetExtension(path);
             var target = Path.Combine(dir, newName + ext);
-            if (string.Equals(path, target, StringComparison.OrdinalIgnoreCase)) return false;
-            if (File.Exists(target)) return false;
+            if (string.Equals(path, target, StringComparison.OrdinalIgnoreCase)) return "目标与当前路径相同，无需改名";
+            if (File.Exists(target)) return "目标文件已存在，未覆盖：" + target;
 
-            // 同目录移动：用 File.Move 即可（DirectoryService 需要宿主注入的 IFileSystem，这里不强依赖）
-            File.Move(path, target);
+            try
+            {
+                File.Move(path, target);
+            }
+            catch (Exception ex)
+            {
+                return "移动文件失败：" + ex.GetType().Name + " - " + ex.Message;
+            }
 
-            item.Path = target;
-            return true;
+            try { item.Path = target; } catch { }
+            newPath = target;
+            return null;
         }
+
 
         /// <summary>
         /// 触发元数据刷新。MetadataRefreshOptions 位于服务端程序集，这里用反射构造，
