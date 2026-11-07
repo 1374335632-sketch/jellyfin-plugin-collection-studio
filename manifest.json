@@ -1,7 +1,7 @@
 [
   {
     "guid": "c7d1a2b4-9e53-4f18-8a2c-6b3d5e7f9041",
-    "name": "合集工坊",
+    "name": "Collection Studio",
     "description": "按元数据自动生成合集：演员/导演写真封面、高级条件规则、改名对照表、备份还原，全中文界面。",
     "overview": "Collection Studio for Jellyfin（Jellyfin 10.9）",
     "owner": "1374335632-sketch",
@@ -9,20 +9,28 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.2.0.0",
+        "changelog": "",
+        "targetAbi": "10.9.0.0",
+        "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/jellyfin-109/dist/Jellyfin.Plugin.CollectionStudio-1.2.0.0-net8.0.zip",
+        "checksum": "bda857990381d9005a790ef0028ab631",
+        "timestamp": "2026-11-07T01:10:00Z"
+      },
+      {
         "version": "1.1.0.0",
         "changelog": "设置页改为 Jellyfin 控制台内部页面（不再接管整页）；分类规则新增「参与分类的媒体库」选择；适配 Jellyfin 12.4 授权方式。",
         "targetAbi": "10.9.0.0",
         "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/jellyfin-109/dist/Jellyfin.Plugin.CollectionStudio-1.1.0.0-net8.0.zip",
-        "checksum": "5f28d3dc7d918ff01be49f0586ff73ce",
-        "timestamp": "2026-11-07T00:00:00Z"
+        "checksum": "fbdfe89d02e559b94c85c402fb0f3d0d",
+        "timestamp": "2026-11-07T00:00:49Z"
       },
       {
         "version": "1.0.0.0",
         "changelog": "",
         "targetAbi": "10.9.0.0",
         "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/jellyfin-109/dist/Jellyfin.Plugin.CollectionStudio-1.0.0.0-net8.0.zip",
-        "checksum": "de6ed72db769ea2f25a39909fd32a00c",
-        "timestamp": "2026-11-07T00:00:00Z"
+        "checksum": "2f950ca1b57d8913e79d3e3d2daaa5d6",
+        "timestamp": "2026-11-07T00:00:49Z"
       }
     ]
   }
