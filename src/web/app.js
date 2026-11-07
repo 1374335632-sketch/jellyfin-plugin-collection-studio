@@ -843,6 +843,7 @@
 
       var opsCell = el('td');
       var ops = el('div', 'cs-actions');
+      ops.appendChild(makeButton('诊断', 'cs-btn-sm', function () { diagnoseRule(rule); }));
       ops.appendChild(makeButton('预演', 'cs-btn-sm', function () { previewRule(rule); }));
       ops.appendChild(makeButton('执行', 'cs-btn-sm cs-btn-primary', function () { applyRule(rule); }));
       ops.appendChild(makeButton('编辑', 'cs-btn-sm', function () { openRuleForm(rule); }));
@@ -1121,6 +1122,67 @@
     }, function (err) {
       btn.disabled = false;
       failToast(err);
+    });
+  }
+
+  // ---------------- 诊断 ----------------
+  // 规则没命中分组时，把每一层的数量直接摆出来，并给出最可能的原因，避免靠猜。
+  function diagnoseRule(rule) {
+    var dlg = openDialog({ title: '诊断：' + (rule.name || ''), wide: true });
+    var body = el('div', 'cs-form');
+    dlg.setBody(body);
+    var loading = el('div', 'cs-empty', '检测中…');
+    body.appendChild(loading);
+
+    getJson('Rules/' + encodeURIComponent(rule.id) + '/Diagnose').then(function (d) {
+      clear(body);
+      var rows = [
+        ['索引总条目', d.indexedTotal],
+        ['规则限定的媒体库', (d.libraryIds && d.libraryIds.length) ? d.libraryIds.join(', ') : '全部媒体库'],
+        ['按媒体库过滤后', d.afterLibraryFilter],
+        ['再按条件过滤后', d.afterConditions],
+        ['带演员信息的条目', d.itemsWithActors],
+        ['带导演信息的条目', d.itemsWithDirectors],
+        ['最终分组数', d.groupCount]
+      ];
+      var table = el('table', 'cs-table');
+      var tb = el('tbody');
+      rows.forEach(function (r) {
+        var tr = el('tr');
+        tr.appendChild(el('th', 'cs-ellipsis', r[0]));
+        tr.appendChild(el('td', '', String(r[1])));
+        tb.appendChild(tr);
+      });
+      table.appendChild(tb);
+      body.appendChild(table);
+
+      if (d.librariesInIndex && d.librariesInIndex.length) {
+        var libText = d.librariesInIndex.map(function (l) {
+          return (l.libraryName || '(无名)') + ' ' + l.count + ' 条 [' + (l.libraryId || '空') + ']';
+        }).join('；');
+        body.appendChild(el('p', 'cs-hint', '索引里的媒体库：' + libText));
+      } else {
+        body.appendChild(el('p', 'cs-hint', '索引里没有任何媒体库数据。'));
+      }
+
+      var verdict;
+      if (d.indexedTotal === 0) {
+        verdict = '结论：索引是空的。请到「总览」点「立即扫描」，等它跑完再来。';
+      } else if (d.afterLibraryFilter === 0) {
+        verdict = '结论：规则选定的媒体库与索引里的媒体库对不上（常见于重建媒体库后 id 变化）。请编辑规则，重新勾选媒体库。';
+      } else if (d.groupCount === 0 && d.mode !== 'custom') {
+        verdict = '结论：条目里没有用于分组的字段（例如此规则按演员分组，但影片缺演员信息）。请在 Jellyfin 里补齐演员元数据，或改用「类型/年份/厂商」等有数据的字段。';
+      } else if (d.groupCount === 0) {
+        verdict = '结论：条件过滤把条目全部排除了。请放宽高级条件。';
+      } else {
+        verdict = '结论：分组正常（' + d.groupCount + ' 个），执行应能创建合集。';
+      }
+      var box = el('p', 'cs-hint', verdict);
+      box.style.marginTop = '10px';
+      body.appendChild(box);
+    }, function (err) {
+      clear(body);
+      body.appendChild(el('p', 'cs-hint', '诊断失败：' + (err && err.body ? err.body : (err && err.message ? err.message : String(err)))));
     });
   }
 
