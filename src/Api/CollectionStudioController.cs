@@ -51,6 +51,87 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
             WriteIndented = false
         };
 
+        // ---------------------------------------------------------------- 源名称替换 + 刮削
+
+        /// <summary>规则试算：给一个源名称，返回每条规则的替换结果，便于在界面上验证正则。</summary>
+        [HttpPost("Rename/Test")]
+        public ActionResult TestRename([FromBody] RenameTestRequest body)
+        {
+            if (body == null) return Error(400, "没有收到内容。");
+            using var store = Open();
+            var settings = store.GetSettings();
+            var rules = body.Rules ?? settings.RenameRules ?? new List<RenameRule>();
+
+            var steps = new List<object>();
+            var current = body.Source ?? string.Empty;
+            foreach (var rule in rules)
+            {
+                if (rule == null) continue;
+                var (pattern, replacement, isRegex) = RenameEngine.ParseRuleText(rule.Pattern);
+                var next = RenameEngine.ReplaceOne(current, pattern, replacement, isRegex, out var hit);
+                steps.Add(new
+                {
+                    rule = rule.Pattern,
+                    pattern,
+                    replacement,
+                    isRegex,
+                    matched = hit,
+                    before = current,
+                    after = next
+                });
+                if (hit) current = next;
+            }
+
+            return Ok(new
+            {
+                source = body.Source,
+                result = current,
+                changed = !string.Equals(current, body.Source, StringComparison.Ordinal),
+                steps
+            });
+        }
+
+        /// <summary>对媒体库执行「先重命名、再刮削」。dryRun=true 只预演。</summary>
+        [HttpPost("Rename/Run")]
+        public async Task<ActionResult> RunRename([FromBody] RenameRunRequest body)
+        {
+            using var store = Open();
+            var settings = store.GetSettings();
+            if (body?.Rules != null && body.Rules.Count > 0) settings.RenameRules = body.Rules;
+
+            var providerManager = (MediaBrowser.Controller.Providers.IProviderManager)HttpContext.RequestServices
+                .GetService(typeof(MediaBrowser.Controller.Providers.IProviderManager));
+            var pipeline = new ScrapePipeline(_library, providerManager, _logger);
+
+            var items = MakeService().Reader.GetAllScannableItems();
+            if (body?.LibraryIds != null && body.LibraryIds.Count > 0)
+            {
+                var reader = MakeService().Reader;
+                items = items.Where(i =>
+                {
+                    var doc = reader.ToDoc(i);
+                    return body.LibraryIds.Any(x => string.Equals(x, doc.LibraryId, StringComparison.OrdinalIgnoreCase));
+                }).ToList();
+            }
+
+            var result = await pipeline.RunAsync(settings, items, body?.DryRun ?? false, CancellationToken.None)
+                .ConfigureAwait(false);
+            return Ok(result);
+        }
+
+        public sealed class RenameTestRequest
+        {
+            public string Source { get; set; } = string.Empty;
+            public List<RenameRule> Rules { get; set; }
+        }
+
+        public sealed class RenameRunRequest
+        {
+            public bool DryRun { get; set; }
+            public List<string> LibraryIds { get; set; }
+            public List<RenameRule> Rules { get; set; }
+        }
+
         // ---------------------------------------------------------------- 完整页面
 
         /// <summary>

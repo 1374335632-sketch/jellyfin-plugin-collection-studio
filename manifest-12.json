@@ -9,100 +9,12 @@
     "imageUrl": "",
     "versions": [
       {
-        "version": "2.1.0.2",
+        "version": "3.0.0.2",
         "changelog": "",
         "targetAbi": "12.4.0.0",
-        "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/dist/Jellyfin.Plugin.CollectionStudio-2.1.0.2-net10.0.zip",
-        "checksum": "68738e50da0c2256019e45cb78854b92",
-        "timestamp": "2026-11-07T11:10:00Z"
-      },
-      {
-        "version": "2.0.0.2",
-        "changelog": "",
-        "targetAbi": "12.4.0.0",
-        "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/dist/Jellyfin.Plugin.CollectionStudio-2.0.0.2-net10.0.zip",
-        "checksum": "98f07f351329500673dc42f7184ce752",
-        "timestamp": "2026-11-07T10:10:00Z"
-      },
-      {
-        "version": "1.9.0.2",
-        "changelog": "",
-        "targetAbi": "12.4.0.0",
-        "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/dist/Jellyfin.Plugin.CollectionStudio-1.9.0.2-net10.0.zip",
-        "checksum": "2228f704578121a57226e201746b3df5",
-        "timestamp": "2026-11-07T09:10:00Z"
-      },
-      {
-        "version": "1.8.0.2",
-        "changelog": "",
-        "targetAbi": "12.4.0.0",
-        "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/dist/Jellyfin.Plugin.CollectionStudio-1.8.0.2-net10.0.zip",
-        "checksum": "80af9cf2e2d085a16e6ff6fa8098cebe",
-        "timestamp": "2026-11-07T08:10:00Z"
-      },
-      {
-        "version": "1.7.0.2",
-        "changelog": "",
-        "targetAbi": "12.4.0.0",
-        "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/dist/Jellyfin.Plugin.CollectionStudio-1.7.0.2-net10.0.zip",
-        "checksum": "6faa96d856f4de04e943cc91c9bbdd46",
-        "timestamp": "2026-11-07T07:10:00Z"
-      },
-      {
-        "version": "1.6.0.2",
-        "changelog": "",
-        "targetAbi": "12.4.0.0",
-        "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/dist/Jellyfin.Plugin.CollectionStudio-1.6.0.2-net10.0.zip",
-        "checksum": "a8c3d12ad3ccfbe2d3a6b6c6fe5b7797",
-        "timestamp": "2026-11-07T06:10:00Z"
-      },
-      {
-        "version": "1.5.0.2",
-        "changelog": "",
-        "targetAbi": "12.4.0.0",
-        "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/dist/Jellyfin.Plugin.CollectionStudio-1.5.0.2-net10.0.zip",
-        "checksum": "8015a82f55f8835a6b40f015f6ee2f79",
-        "timestamp": "2026-11-07T05:10:00Z"
-      },
-      {
-        "version": "1.4.0.2",
-        "changelog": "",
-        "targetAbi": "12.4.0.0",
-        "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/dist/Jellyfin.Plugin.CollectionStudio-1.4.0.2-net10.0.zip",
-        "checksum": "08f9469f4af24f65a1297d565591f4f2",
-        "timestamp": "2026-11-07T04:20:00Z"
-      },
-      {
-        "version": "1.3.0.2",
-        "changelog": "",
-        "targetAbi": "12.4.0.0",
-        "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/dist/Jellyfin.Plugin.CollectionStudio-1.3.0.2-net10.0.zip",
-        "checksum": "4eaf7e74de25b4e0ccb9cf8a63a797ae",
-        "timestamp": "2026-11-07T03:10:00Z"
-      },
-      {
-        "version": "1.2.0.2",
-        "changelog": "",
-        "targetAbi": "12.4.0.0",
-        "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/dist/Jellyfin.Plugin.CollectionStudio-1.2.0.2-net10.0.zip",
-        "checksum": "99b9e086dba06efbc01d1155591c4b08",
-        "timestamp": "2026-11-07T01:50:00Z"
-      },
-      {
-        "version": "1.1.0.2",
-        "changelog": "设置页改为 Jellyfin 控制台内部页面（不再接管整页）；分类规则新增「参与分类的媒体库」选择；适配 Jellyfin 12.4 授权方式。",
-        "targetAbi": "12.4.0.0",
-        "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/dist/Jellyfin.Plugin.CollectionStudio-1.1.0.2-net10.0.zip",
-        "checksum": "5eafd45e0f4b12e513bebc6a57eb8bee",
-        "timestamp": "2026-11-07T00:00:49Z"
-      },
-      {
-        "version": "1.0.0.2",
-        "changelog": "",
-        "targetAbi": "12.4.0.0",
-        "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/dist/Jellyfin.Plugin.CollectionStudio-1.0.0.2-net10.0.zip",
-        "checksum": "26112d89efbef4851f13901c72974788",
-        "timestamp": "2026-11-07T00:00:49Z"
+        "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/dist/Jellyfin.Plugin.CollectionStudio-3.0.0.2-net10.0.zip",
+        "checksum": "8248956312f2f5b9ef12b58b512247cd",
+        "timestamp": "2026-11-07T12:00:00Z"
       }
     ]
   }

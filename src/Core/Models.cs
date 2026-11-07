@@ -14,6 +14,37 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
         [JsonPropertyName("customSources")] public List<CustomSource> CustomSources { get; set; } = new List<CustomSource>();
         [JsonPropertyName("defaultPageSize")] public int DefaultPageSize { get; set; } = 50;
         [JsonPropertyName("autoBackupBeforeApply")] public bool AutoBackupBeforeApply { get; set; } = true;
+
+        /// <summary>源名称替换规则：刮削前先按这些规则改写文件名/名称。</summary>
+        [JsonPropertyName("renameRules")] public List<RenameRule> RenameRules { get; set; } = new List<RenameRule>();
+
+        /// <summary>刮削前是否执行重命名（默认开启，顺序固定为重命名 → 刮削）。</summary>
+        [JsonPropertyName("renameBeforeScrape")] public bool RenameBeforeScrape { get; set; } = true;
+
+        /// <summary>重命名命中的名称是否同时写回 Jellyfin 名称（否则只改文件名）。</summary>
+        [JsonPropertyName("renameWriteName")] public bool RenameWriteName { get; set; } = true;
+
+        /// <summary>是否同时重命名磁盘文件（关闭则只改 Jellyfin 里的名称）。</summary>
+        [JsonPropertyName("renamePhysicalFiles")] public bool RenamePhysicalFiles { get; set; } = false;
+    }
+
+    /// <summary>
+    /// 一条源名称替换规则。规则文本形如 「*@：」或 「pattern:replacement」：
+    /// 冒号前是匹配模式（支持正则；若整行不含正则元字符则按字面替换），
+    /// 冒号后是替换文本，留空表示删除匹配内容。
+    /// 例：源名称 "1561684@vvvv-66"，规则 "*@:" → "vvvv-66"。
+    /// </summary>
+    public sealed class RenameRule
+    {
+        [JsonPropertyName("id")] public string Id { get; set; } = string.Empty;
+        /// <summary>原始规则文本，如 "*@:"。</summary>
+        [JsonPropertyName("pattern")] public string Pattern { get; set; } = string.Empty;
+        /// <summary>是否启用。</summary>
+        [JsonPropertyName("enabled")] public bool Enabled { get; set; } = true;
+        /// <summary>备注。</summary>
+        [JsonPropertyName("note")] public string Note { get; set; } = string.Empty;
+        /// <summary>只对路径包含该文本的条目生效（留空=全部）。</summary>
+        [JsonPropertyName("onlyIfPathContains")] public string OnlyIfPathContains { get; set; } = string.Empty;
     }
 
     public sealed class CustomSource

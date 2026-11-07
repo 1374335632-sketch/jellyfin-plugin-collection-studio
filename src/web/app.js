@@ -1125,6 +1125,121 @@
     });
   }
 
+  // ---------------- 源名称替换规则 ----------------
+  function wrapField(label, build) {
+    var field = el('label', 'cs-field');
+    field.appendChild(el('span', 'cs-label', label));
+    field.appendChild(build());
+    return field;
+  }
+
+  function ruleRow(rule) {
+    var r = rule || { pattern: '', enabled: true, note: '', onlyIfPathContains: '' };
+    var row = el('div', 'cs-source');
+    var head = el('div', 'cs-source-head');
+    var enabled = document.createElement('input');
+    enabled.type = 'checkbox';
+    enabled.checked = r.enabled !== false;
+    head.appendChild(enabled);
+    head.appendChild(el('span', 'cs-inline-text', '启用'));
+    var del = makeButton('删除', 'cs-btn-sm cs-btn-ghost-danger', function () {
+      if (row.parentNode) { row.parentNode.removeChild(row); }
+    });
+    del.style.marginLeft = 'auto';
+    head.appendChild(del);
+    row.appendChild(head);
+
+    var grid = el('div', 'cs-grid2');
+    grid.appendChild(wrapField('规则（模式:替换）', function () {
+      var inp = document.createElement('input');
+      inp.className = 'cs-input';
+      inp.type = 'text';
+      inp.value = r.pattern || '';
+      inp.placeholder = '例如 *@:';
+      return inp;
+    }));
+    grid.appendChild(wrapField('仅路径包含（留空=全部）', function () {
+      var inp = document.createElement('input');
+      inp.className = 'cs-input';
+      inp.type = 'text';
+      inp.value = r.onlyIfPathContains || '';
+      inp.placeholder = '可留空';
+      return inp;
+    }));
+    row.appendChild(grid);
+    row.__enabled = enabled;
+    return row;
+  }
+
+  function collectRenameRules() {
+    var box = $('rnRules');
+    if (!box) { return []; }
+    var out = [];
+    Array.prototype.forEach.call(box.children, function (row) {
+      if (!row.__enabled) { return; }
+      var inputs = row.querySelectorAll('input.cs-input');
+      var pattern = inputs[0] ? inputs[0].value.trim() : '';
+      if (!pattern) { return; }
+      out.push({
+        id: '',
+        pattern: pattern,
+        enabled: row.__enabled.checked,
+        onlyIfPathContains: inputs[1] ? inputs[1].value.trim() : '',
+        note: ''
+      });
+    });
+    return out;
+  }
+
+  function renderRenameRules(rules) {
+    var box = $('rnRules');
+    if (!box) { return; }
+    clear(box);
+    (rules || []).forEach(function (r) { box.appendChild(ruleRow(r)); });
+    if (!(rules || []).length) { box.appendChild(ruleRow(null)); }
+  }
+
+  function testRename() {
+    var src = $('rnTestInput').value;
+    var out = $('rnTestResult');
+    out.textContent = '计算中…';
+    sendJson('POST', 'Rename/Test', { source: src, rules: collectRenameRules() }).then(function (d) {
+      out.textContent = (d.changed ? '命中 → ' : '未命中 → ') + d.result;
+    }, function (err) {
+      out.textContent = '试算失败';
+      failToast(err);
+    });
+  }
+
+  function runRename(dryRun) {
+    var body = $('rnRunBody');
+    tableMessage(body, dryRun ? '预演中…' : '执行中（先重命名，再刮削）…', 6);
+    sendJson('POST', 'Rename/Run', { dryRun: dryRun, rules: collectRenameRules() }).then(function (d) {
+      clear(body);
+      var rows = (d.steps || []).filter(function (s) { return s.renamed || (s.message && s.message.indexOf('失败') >= 0); });
+      if (!rows.length) {
+        tableMessage(body, dryRun ? '没有可重命名的条目（规则未命中任何影片名称）' : '没有条目被改名', 6);
+        toast('扫描 ' + d.scanned + ' 条，命中 ' + d.renamed + ' 条');
+        return;
+      }
+      rows.forEach(function (s) {
+        var tr = el('tr');
+        tr.appendChild(el('td', 'cs-ellipsis', s.originalName || ''));
+        tr.appendChild(el('td', 'cs-ellipsis', s.renamedTo || ''));
+        tr.appendChild(el('td', '', s.appliedRule || '—'));
+        tr.appendChild(el('td', '', s.fileRenamed ? '是' : '否'));
+        tr.appendChild(el('td', '', s.scrapeQueued ? '是' : '否'));
+        tr.appendChild(el('td', 'cs-ellipsis', s.message || ''));
+        body.appendChild(tr);
+      });
+      toast((dryRun ? '预演完成：' : '完成：') + '扫描 ' + d.scanned + ' 条，改名 ' + d.renamed
+        + ' 条，文件改名 ' + d.filesRenamed + ' 个，已排队刮削 ' + d.scraped + ' 条');
+    }, function (err) {
+      tableMessage(body, '执行失败', 6);
+      failToast(err);
+    });
+  }
+
   // ---------------- 诊断 ----------------
   // 规则没命中分组时，把每一层的数量直接摆出来，并给出最可能的原因，避免靠猜。
   function diagnoseRule(rule) {
@@ -2030,6 +2145,11 @@
     ps.value = found ? pv : '50';
     $('stAutoBackup').checked = d.autoBackupBeforeApply !== false;
     renderSources(d.customSources || []);
+
+    if ($('rnEnabled')) { $('rnEnabled').checked = d.renameBeforeScrape !== false; }
+    if ($('rnWriteName')) { $('rnWriteName').checked = d.renameWriteName !== false; }
+    if ($('rnPhysical')) { $('rnPhysical').checked = d.renamePhysicalFiles === true; }
+    renderRenameRules(d.renameRules || []);
   }
 
   function loadSettings() {
@@ -2054,7 +2174,11 @@
       metaTubeTimeoutSeconds: Number($('stTimeout').value) || 20,
       customSources: collectSources(),
       defaultPageSize: Number($('stPageSize').value) || 50,
-      autoBackupBeforeApply: $('stAutoBackup').checked
+      autoBackupBeforeApply: $('stAutoBackup').checked,
+      renameRules: collectRenameRules(),
+      renameBeforeScrape: $('rnEnabled') ? $('rnEnabled').checked : true,
+      renameWriteName: $('rnWriteName') ? $('rnWriteName').checked : true,
+      renamePhysicalFiles: $('rnPhysical') ? $('rnPhysical').checked : false
     };
     var btn = $('stSaveBtn');
     btn.disabled = true;
@@ -2187,6 +2311,10 @@
 
     safeOn('stSaveBtn', 'click', saveSettings);
     safeOn('stTestBtn', 'click', testConnection);
+    safeOn('rnAddRule', 'click', function () { $('rnRules').appendChild(ruleRow(null)); });
+    safeOn('rnTestBtn', 'click', testRename);
+    safeOn('rnDryBtn', 'click', function () { runRename(true); });
+    safeOn('rnRunBtn', 'click', function () { runRename(false); });
     safeOn('stAddSource', 'click', function () {
       var box = $('stSources');
       var empty = box.querySelector('.cs-sources-empty');

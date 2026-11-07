@@ -360,6 +360,62 @@
           </div>
           <div class="cs-sources" id="stSources"></div>
         </div>
+
+        <div class="cs-card">
+          <div class="cs-card-head">
+            <h2 class="cs-card-title">源名称替换（刮削前执行）</h2>
+            <div class="cs-card-actions">
+              <button type="button" class="cs-btn" id="rnAddRule">+ 新增规则</button>
+              <button type="button" class="cs-btn" id="rnTestBtn">试算</button>
+              <button type="button" class="cs-btn" id="rnDryBtn">预演</button>
+              <button type="button" class="cs-btn cs-btn-primary" id="rnRunBtn">重命名并刮削</button>
+            </div>
+          </div>
+
+          <div class="cs-form">
+            <div class="cs-grid2">
+              <label class="cs-field cs-field-inline">
+                <input type="checkbox" id="rnEnabled" checked />
+                <span class="cs-inline-text">启用「先重命名、再刮削」</span>
+              </label>
+              <label class="cs-field cs-field-inline">
+                <input type="checkbox" id="rnWriteName" checked />
+                <span class="cs-inline-text">同时改写 Jellyfin 名称</span>
+              </label>
+            </div>
+            <label class="cs-field cs-field-inline">
+              <input type="checkbox" id="rnPhysical" />
+              <span class="cs-inline-text">同时重命名磁盘文件（会改动媒体文件名，建议先预演）</span>
+            </label>
+            <p class="cs-hint">
+              规则格式：<code>模式:替换文本</code>。冒号前是匹配模式（以 <code>*</code> 开头表示「任意前缀」，其余按正则），
+              冒号后是替换内容，留空即删除。例：源名称 <code>1561684@vvvv-66</code>，规则 <code>*@:</code> 得到 <code>vvvv-66</code>。
+              执行顺序固定为：重命名 → 写入名称 → 触发刮削。
+            </p>
+
+            <div class="cs-sources" id="rnRules"></div>
+
+            <div class="cs-grid2">
+              <label class="cs-field">
+                <span class="cs-label">试算输入的源名称</span>
+                <input class="cs-input" id="rnTestInput" type="text" placeholder="例如 1561684@vvvv-66" />
+              </label>
+              <label class="cs-field">
+                <span class="cs-label">试算结果</span>
+                <span class="cs-test-result" id="rnTestResult">尚未试算</span>
+              </label>
+            </div>
+
+            <div class="cs-table-wrap">
+              <table class="cs-table">
+                <thead>
+                  <tr><th>原名</th><th>改名后</th><th>命中规则</th><th>文件已改名</th><th>已排队刮削</th><th>说明</th></tr>
+                </thead>
+                <tbody id="rnRunBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </section>
       </div>
 
