@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.CollectionStudio.Core;
@@ -88,6 +89,52 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
             {
                 _logger.LogError(ex, "读取完整页面失败");
                 return Error(500, ex.Message);
+            }
+        }
+
+        // ---------------------------------------------------------------- 清单代理
+
+        /// <summary>
+        /// 插件清单的转发端点。直连 raw.githubusercontent.com 在国内网络常被阻断，
+        /// 而 gh-proxy 会带 60 秒 CDN 缓存，导致刚发布的新版本在控制台里看不到。
+        /// 这里加时间戳绕过缓存，并把结果原样返回，作为「存储库 URL」使用即可。
+        /// </summary>
+        [HttpGet("/CollectionStudio/Manifest")]
+        [AllowAnonymous]
+        [Produces("application/json")]
+        public async Task<ActionResult> GetManifest([FromQuery] string name = "manifest-12.json")
+        {
+            if (!Regex.IsMatch(name, @"^manifest(-(10|109|12)?)?\.json$", RegexOptions.IgnoreCase))
+            {
+                return Error(400, "非法清单名");
+            }
+
+            var baseUrl = "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio";
+            var branch = name.Contains("-109") ? "main" : (name.Contains("-10") ? "main" : "main");
+            var target = baseUrl + "/" + branch + "/" + name + "?v=" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+            try
+            {
+                using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+                http.DefaultRequestHeaders.Add("Cache-Control", "no-cache, no-store");
+                http.DefaultRequestHeaders.Add("Pragma", "no-cache");
+                using var response = await http.GetAsync(target, CancellationToken.None);
+                var body = await response.Content.ReadAsStringAsync(CancellationToken.None);
+                if (!response.IsSuccessStatusCode)
+                {
+                    return Error(502, "上游清单获取失败：" + response.StatusCode);
+                }
+                return new ContentResult
+                {
+                    Content = body,
+                    ContentType = "application/json; charset=utf-8",
+                    StatusCode = 200
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "获取清单失败");
+                return Error(502, ex.Message);
             }
         }
 
