@@ -884,3 +884,15 @@ input[type="number"], input[type="time"], select, textarea {
 .cs-nav-item { background: var(--cs-surface-2) !important; color: var(--cs-fg) !important; border: 1px solid var(--cs-border) !important; }
 .cs-nav-item:hover { background: var(--cs-surface-3) !important; }
 .cs-nav-item.is-active { background: var(--cs-accent) !important; color: #fff !important; border-color: var(--cs-accent) !important; }
+/* ---------- 结果表格可读性 ---------- */
+/* 说明列常含长错误信息，不能省略号截断，要能换行看全 */
+.cs-table td.cs-wrap-cell {
+  max-width: none !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-break: break-word !important;
+  line-height: 1.5;
+}
+/* 路径列放宽，避免路径看不出差异 */
+.cs-ellipsis { max-width: 420px; }

@@ -954,6 +954,111 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
             catch { return new CsSettings(); }
         }
 
+        /// <summary>
+        /// 写权限诊断：对指定媒体库的实际目录做真实的写入测试，
+        /// 判断是「只读挂载」「无写权限」还是「目录不存在」，并返回可执行的结论。
+        /// </summary>
+        [HttpGet("Rename/WriteCheck")]
+        public ActionResult WriteCheck([FromQuery] string? libraryId = null)
+        {
+            var reader = MakeService().Reader;
+            var report = new List<object>();
+
+            List<IndexItemDoc> docs;
+            try
+            {
+                docs = reader.GetAllScannableItems().Select(i => reader.ToDoc(i)).ToList();
+            }
+            catch (Exception ex)
+            {
+                return Error(500, "读取媒体库失败：" + ex.Message);
+            }
+
+            if (!string.IsNullOrWhiteSpace(libraryId))
+            {
+                docs = docs.Where(d => string.Equals(d.LibraryId, libraryId, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+
+            // 按目录去重，逐个测试该目录是否可写
+            var dirs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var d in docs.Take(2000))
+            {
+                try
+                {
+                    var dir = string.IsNullOrWhiteSpace(d.Path) ? null : System.IO.Path.GetDirectoryName(d.Path);
+                    if (!string.IsNullOrWhiteSpace(dir)) dirs.Add(dir);
+                }
+                catch { }
+            }
+
+            foreach (var dir in dirs.Take(20))
+            {
+                var entry = new Dictionary<string, object>
+                {
+                    ["directory"] = dir,
+                    ["exists"] = false,
+                    ["writable"] = false,
+                    ["verdict"] = string.Empty,
+                    ["detail"] = string.Empty
+                };
+
+                try
+                {
+                    var dirExists = System.IO.Directory.Exists(dir);
+                    entry["exists"] = dirExists;
+                    if (!dirExists)
+                    {
+                        entry["verdict"] = "目录不存在";
+                        report.Add(entry);
+                        continue;
+                    }
+
+                    // 真实写入测试：创建再删除一个临时文件
+                    var probe = System.IO.Path.Combine(dir, ".cs-write-probe-" + Guid.NewGuid().ToString("N").Substring(0, 8));
+                    try
+                    {
+                        using (var fs = System.IO.File.Create(probe, 1, FileOptions.DeleteOnClose))
+                        {
+                            fs.Write(new byte[] { 0x43, 0x53 }, 0, 2);
+                        }
+                        entry["writable"] = true;
+                        entry["verdict"] = "可写，重命名磁盘文件应能成功";
+                    }
+                    catch (Exception ex)
+                    {
+                        var msg = ex.GetType().Name + " - " + ex.Message;
+                        if (msg.IndexOf("Read-only file system", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            entry["verdict"] = "容器内该目录是只读挂载（挂载参数为 :ro）";
+                            entry["detail"] = "在宿主机检查 docker 挂载：docker inspect jellyfin --format '{{range .Mounts}}{{.Source}} -> {{.Destination}} RW={{.RW}}{{println}}{{end}}'；"
+                                            + "把媒体卷的 :ro 去掉或改为 :rw 后重建容器。";
+                        }
+                        else if (msg.IndexOf("Permission denied", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            entry["verdict"] = "目录可访问但当前用户无写权限";
+                            entry["detail"] = "在宿主机给该目录授权（容器内用户通常 UID=1000）："
+                                            + "chown -R 1000:1000 <宿主机目录> 或 chmod -R a+rw <宿主机目录>。";
+                        }
+                        else if (msg.IndexOf("No space", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            entry["verdict"] = "磁盘空间不足";
+                        }
+                        else
+                        {
+                            entry["verdict"] = "写入失败：" + msg;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    entry["verdict"] = "检测异常：" + ex.Message;
+                }
+                report.Add(entry);
+            }
+
+            return Ok(new { checkedDirectories = report.Count, report });
+        }
+
         // ---------------------------------------------------------------- 媒体库文件清单
 
         /// <summary>

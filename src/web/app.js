@@ -1285,6 +1285,46 @@
     if (!(rules || []).length) { box.appendChild(ruleRow(null)); }
   }
 
+  // 写权限诊断：逐个目录做真实写入测试并给出结论
+  function checkWritePermission() {
+    var dlg = openDialog({ title: '写权限检查', wide: true });
+    var body = el('div', 'cs-form');
+    dlg.setBody(body);
+    body.appendChild(el('div', 'cs-empty', '正在测试…'));
+    var libId = selectedRenameLibraries()[0] || '';
+    getJson('Rename/WriteCheck?libraryId=' + encodeURIComponent(libId)).then(function (d) {
+      clear(body);
+      var report = d.report || [];
+      if (!report.length) {
+        body.appendChild(el('div', 'cs-empty', '没有可检查的目录（请确认媒体库里有影片）'));
+        return;
+      }
+      var table = el('table', 'cs-table');
+      var thead = el('thead');
+      var htr = el('tr');
+      ['目录', '存在', '可写', '结论与建议'].forEach(function (t) { htr.appendChild(el('th', '', t)); });
+      thead.appendChild(htr);
+      table.appendChild(thead);
+      var tb = el('tbody');
+      report.forEach(function (r) {
+        var tr = el('tr');
+        tr.appendChild(el('td', 'cs-ellipsis', r.directory || ''));
+        tr.appendChild(el('td', '', r.exists ? '是' : '否'));
+        tr.appendChild(el('td', '', r.writable ? '是' : '否'));
+        var cell = el('td', 'cs-wrap-cell');
+        cell.appendChild(el('div', '', r.verdict || ''));
+        if (r.detail) { cell.appendChild(el('div', 'cs-hint', r.detail)); }
+        tr.appendChild(cell);
+        tb.appendChild(tr);
+      });
+      table.appendChild(tb);
+      body.appendChild(table);
+    }, function (err) {
+      clear(body);
+      body.appendChild(el('div', 'cs-empty', '检查失败'));
+      failToast(err);
+    });
+  }
   function testRename() {
     var src = $('rnTestInput').value;
     var out = $('rnTestResult');
@@ -1333,7 +1373,7 @@
         tr.appendChild(el('td', '', (s.AppliedRule !== undefined ? s.AppliedRule : s.appliedRule) || '—'));
         tr.appendChild(el('td', '', ((s.FileRenamed !== undefined ? s.FileRenamed : s.fileRenamed) ? '是' : '否')));
         tr.appendChild(el('td', '', ((s.ScrapeQueued !== undefined ? s.ScrapeQueued : s.scrapeQueued) ? '是' : '否')));
-        tr.appendChild(el('td', 'cs-ellipsis', (s.Message !== undefined ? s.Message : s.message) || ''));
+        tr.appendChild(el('td', 'cs-wrap-cell', (s.Message !== undefined ? s.Message : s.message) || ''));
         body.appendChild(tr);
       });
       toast((dryRun ? '预演完成：' : '完成：') + '扫描 ' + (scanned || 0) + ' 条，改名 ' + (renamed || 0)
@@ -2710,6 +2750,7 @@
     safeOn('stTestBtn', 'click', testConnection);
     safeOn('rnAddRule', 'click', function () { $('rnRules').appendChild(ruleRow(null)); });
     safeOn('rnTestBtn', 'click', testRename);
+    safeOn('rnCheckBtn', 'click', checkWritePermission);
     safeOn('rnDryBtn', 'click', function () { runRename(true, 'rename'); });
     safeOn('rnRunBtn', 'click', function () { runRename(false, 'rename'); });
     safeOn('rnScrapeBtn', 'click', function () { runRename(false, 'scrape'); });
