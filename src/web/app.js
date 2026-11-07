@@ -2201,14 +2201,17 @@
     try { lastTab = document.documentElement.getAttribute('data-cs-tab'); } catch (e) { }
     switchTab(TAB_META[lastTab] ? lastTab : 'overview');
 
-    window.CollectionStudioUI = {
-      switchTab: function (tab) { return navTo(tab, null); },
-      currentTab: function () { return state.currentTab; }
-    };
-    window.CS = {
-      nav: function (tab, el) { return navTo(tab, el); }
-    };
   }
+
+  // 页面上的按钮用内联 onclick="if(window.CS){window.CS.nav(...)}" 调用这里。
+  // 必须在 init 之前就挂好：否则 init 中任一处异常都会让 window.CS 不存在，
+  // 整页按钮全部静默失效（这正是「点不了」的成因）。
+  window.CS = {
+    nav: function (tab, el) {
+      try { return navTo(tab, el); }
+      catch (e) { try { console.error('[Collection Studio] 切换标签失败：', e); } catch (ignore) { } return false; }
+    }
+  };
 
   // 任何初始化异常都不应让整页失去响应：捕获后仍保留已绑定的部分，并把错误暴露出来
   try {

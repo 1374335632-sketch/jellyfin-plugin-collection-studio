@@ -13,8 +13,8 @@
         "changelog": "",
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/dist/Jellyfin.Plugin.CollectionStudio-1.2.0.1-net9.0.zip",
-        "checksum": "6efb42cb0f702d0013b0b587ae289380",
-        "timestamp": "2026-11-07T00:00:49Z"
+        "checksum": "f5c448b235e1dff9624d5154a97dd925",
+        "timestamp": "2026-11-07T01:30:00Z"
       },
       {
         "version": "1.1.0.1",
