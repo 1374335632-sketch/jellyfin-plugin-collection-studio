@@ -137,74 +137,155 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
 
         /// <summary>规则试算：给一个源名称，返回每条规则的替换结果，便于在界面上验证正则。</summary>
         [HttpPost("Rename/Test")]
-        public ActionResult TestRename([FromBody] RenameTestRequest body)
+        public ActionResult TestRename([FromBody] System.Text.Json.JsonElement payload)
         {
-            if (body == null) return Error(400, "没有收到内容。");
-            using var store = Open();
-            var settings = store.GetSettings();
-            var rules = body.Rules ?? settings.RenameRules ?? new List<RenameRule>();
-
-            var steps = new List<object>();
-            var current = body.Source ?? string.Empty;
-            foreach (var rule in rules)
+            try
             {
-                if (rule == null) continue;
-                var (pattern, replacement, isRegex) = RenameEngine.ParseRuleText(rule.Pattern);
-                var next = RenameEngine.ReplaceOne(current, pattern, replacement, isRegex, out var hit);
-                steps.Add(new
+                var source = string.Empty;
+                if (TryProp(payload, "source", out var sv) && sv.ValueKind == System.Text.Json.JsonValueKind.String) source = sv.GetString() ?? string.Empty;
+
+                var rules = ReadRules(payload, "rules", "Rules");
+                using var store = Open();
+                if (rules.Count == 0) rules = store.GetSettings().RenameRules ?? new List<RenameRule>();
+
+                var steps = new List<object>();
+                var current = source;
+                foreach (var rule in rules)
                 {
-                    rule = rule.Pattern,
-                    pattern,
-                    replacement,
-                    isRegex,
-                    matched = hit,
-                    before = current,
-                    after = next
-                });
-                if (hit) current = next;
-            }
+                    if (rule == null) continue;
+                    var (pattern, replacement, isRegex) = RenameEngine.ParseRuleText(rule.Pattern);
+                    var next = RenameEngine.ReplaceOne(current, pattern, replacement, isRegex, out var hit);
+                    steps.Add(new { rule = rule.Pattern, pattern, replacement, isRegex, matched = hit, before = current, after = next });
+                    if (hit) current = next;
+                }
 
-            return Ok(new
+                return Ok(new { source, result = current, changed = !string.Equals(current, source, StringComparison.Ordinal), steps });
+            }
+            catch (Exception ex)
             {
-                source = body.Source,
-                result = current,
-                changed = !string.Equals(current, body.Source, StringComparison.Ordinal),
-                steps
-            });
+                _logger.LogError(ex, "试算失败");
+                return Error(500, "试算失败：" + ex.Message);
+            }
         }
 
         /// <summary>对媒体库执行「先重命名、再刮削」。dryRun=true 只预演。</summary>
+        /// <remarks>
+        /// 直接用 JsonElement 接收，再自行宽松解析：避免因前端字段大小写或结构差异
+        /// 在模型绑定阶段就返回 400（那种错误没有可读信息，很难定位）。
+        /// </remarks>
         [HttpPost("Rename/Run")]
-        public async Task<ActionResult> RunRename([FromBody] RenameRunRequest body)
+        public async Task<ActionResult> RunRename([FromBody] System.Text.Json.JsonElement payload)
         {
-            using var store = Open();
-            var settings = store.GetSettings();
-            if (body?.Rules != null && body.Rules.Count > 0) settings.RenameRules = body.Rules;
-
-            var providerManager = (MediaBrowser.Controller.Providers.IProviderManager)HttpContext.RequestServices
-                .GetService(typeof(MediaBrowser.Controller.Providers.IProviderManager));
-            var pipeline = new ScrapePipeline(_library, providerManager, _logger);
-
-            var items = MakeService().Reader.GetAllScannableItems();
-            if (body?.LibraryIds != null && body.LibraryIds.Count > 0)
+            try
             {
+                var dryRun = ReadBool(payload, "dryRun", "DryRun");
+                var rules = ReadRules(payload, "rules", "Rules");
+                var libraryIds = ReadStringList(payload, "libraryIds", "LibraryIds");
+
+                using var store = Open();
+                var settings = store.GetSettings();
+                if (rules.Count > 0) settings.RenameRules = rules;
+
+                var providerManager = (MediaBrowser.Controller.Providers.IProviderManager)HttpContext.RequestServices
+                    .GetService(typeof(MediaBrowser.Controller.Providers.IProviderManager));
+                var pipeline = new ScrapePipeline(_library, providerManager, _logger);
+
                 var reader = MakeService().Reader;
-                items = items.Where(i =>
+                var items = reader.GetAllScannableItems();
+                if (libraryIds.Count > 0)
                 {
-                    var doc = reader.ToDoc(i);
-                    return body.LibraryIds.Any(x => string.Equals(x, doc.LibraryId, StringComparison.OrdinalIgnoreCase));
-                }).ToList();
+                    items = items.Where(i =>
+                    {
+                        var doc = reader.ToDoc(i);
+                        return libraryIds.Any(x => string.Equals(x, doc.LibraryId, StringComparison.OrdinalIgnoreCase));
+                    }).ToList();
+                }
+
+                var result = await pipeline.RunAsync(settings, items, dryRun, CancellationToken.None)
+                    .ConfigureAwait(false);
+
+                // 预演不写日志；真实执行才记录，供「复原」使用
+                if (!dryRun && result.RenameLogs.Count > 0)
+                {
+                    foreach (var log in result.RenameLogs) { store.RenameLogs.Upsert(log); }
+                }
+                return Ok(result);
             }
-
-            var result = await pipeline.RunAsync(settings, items, body?.DryRun ?? false, CancellationToken.None)
-                .ConfigureAwait(false);
-
-            // 预演不写日志；真实执行才记录，供「复原」使用
-            if (!(body?.DryRun ?? false) && result.RenameLogs.Count > 0)
+            catch (Exception ex)
             {
-                foreach (var log in result.RenameLogs) { store.RenameLogs.Upsert(log); }
+                _logger.LogError(ex, "重命名执行失败");
+                return Error(500, "执行失败：" + ex.Message);
             }
-            return Ok(result);
+        }
+
+        private static bool ReadBool(System.Text.Json.JsonElement node, params string[] names)
+        {
+            foreach (var n in names)
+            {
+                if (!TryProp(node, n, out var v)) continue;
+                if (v.ValueKind == System.Text.Json.JsonValueKind.True) return true;
+                if (v.ValueKind == System.Text.Json.JsonValueKind.False) return false;
+                if (v.ValueKind == System.Text.Json.JsonValueKind.String)
+                {
+                    var s = v.GetString();
+                    return s != null && (s.Equals("true", StringComparison.OrdinalIgnoreCase) || s == "1");
+                }
+            }
+            return false;
+        }
+
+        private static List<string> ReadStringList(System.Text.Json.JsonElement node, params string[] names)
+        {
+            var list = new List<string>();
+            foreach (var n in names)
+            {
+                if (!TryProp(node, n, out var v) || v.ValueKind != System.Text.Json.JsonValueKind.Array) continue;
+                foreach (var item in v.EnumerateArray())
+                {
+                    if (item.ValueKind == System.Text.Json.JsonValueKind.String)
+                    {
+                        var s = item.GetString();
+                        if (!string.IsNullOrWhiteSpace(s)) list.Add(s.Trim());
+                    }
+                }
+                break;
+            }
+            return list;
+        }
+
+        private static List<RenameRule> ReadRules(System.Text.Json.JsonElement node, params string[] names)
+        {
+            var list = new List<RenameRule>();
+            foreach (var n in names)
+            {
+                if (!TryProp(node, n, out var v) || v.ValueKind != System.Text.Json.JsonValueKind.Array) continue;
+                foreach (var item in v.EnumerateArray())
+                {
+                    if (item.ValueKind != System.Text.Json.JsonValueKind.Object) continue;
+                    var rule = new RenameRule();
+                    if (TryProp(item, "pattern", out var p) && p.ValueKind == System.Text.Json.JsonValueKind.String) rule.Pattern = p.GetString() ?? string.Empty;
+                    if (TryProp(item, "Pattern", out var p2) && p2.ValueKind == System.Text.Json.JsonValueKind.String) rule.Pattern = p2.GetString() ?? string.Empty;
+                    rule.Enabled = !TryProp(item, "enabled", out var en) || en.ValueKind == System.Text.Json.JsonValueKind.True || en.ValueKind == System.Text.Json.JsonValueKind.Null;
+                    if (TryProp(item, "Enabled", out var en2)) rule.Enabled = en2.ValueKind == System.Text.Json.JsonValueKind.True;
+                    if (TryProp(item, "onlyIfPathContains", out var op) && op.ValueKind == System.Text.Json.JsonValueKind.String) rule.OnlyIfPathContains = op.GetString() ?? string.Empty;
+                    if (TryProp(item, "note", out var nt) && nt.ValueKind == System.Text.Json.JsonValueKind.String) rule.Note = nt.GetString() ?? string.Empty;
+                    if (string.IsNullOrWhiteSpace(rule.Pattern)) continue;
+                    list.Add(rule);
+                }
+                break;
+            }
+            return list;
+        }
+
+        private static bool TryProp(System.Text.Json.JsonElement node, string name, out System.Text.Json.JsonElement value)
+        {
+            value = default;
+            if (node.ValueKind != System.Text.Json.JsonValueKind.Object) return false;
+            foreach (var prop in node.EnumerateObject())
+            {
+                if (string.Equals(prop.Name, name, StringComparison.OrdinalIgnoreCase)) { value = prop.Value; return true; }
+            }
+            return false;
         }
 
         public sealed class RenameTestRequest

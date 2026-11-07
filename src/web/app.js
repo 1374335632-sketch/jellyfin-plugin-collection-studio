@@ -173,14 +173,32 @@
 
   function makeHttpError(status, body) {
     var msg = '';
-    if (body) {
+    if (body && body.length) {
       try {
         var d = JSON.parse(body);
-        if (d && d.error) { msg = String(d.error); }
-      } catch (e) { /* 非 JSON 响应 */ }
+        if (d) {
+          // 自家端点统一返回 { error }
+          if (d.error) { msg = String(d.error); }
+          // ASP.NET 模型绑定的校验错误形如 { errors: { "$.xxx": ["..."] } }
+          else if (d.errors) {
+            var parts = [];
+            for (var k in d.errors) {
+              if (!Object.prototype.hasOwnProperty.call(d.errors, k)) { continue; }
+              var v = d.errors[k];
+              parts.push(Array.isArray(v) ? v.join('；') : String(v));
+            }
+            if (parts.length) { msg = parts.join('；'); }
+          }
+          else if (d.title) { msg = String(d.title); }
+        }
+      } catch (e) {
+        // 非 JSON 响应：截取前一段原文，总比只有状态码有用
+        msg = String(body).slice(0, 300).trim();
+      }
     }
     var err = new Error(msg || ('请求失败：HTTP ' + status));
     err.status = status;
+    err.body = body;
     return err;
   }
 
@@ -1266,7 +1284,14 @@
       toast((dryRun ? '预演完成：' : '完成：') + '扫描 ' + d.scanned + ' 条，改名 ' + d.renamed
         + ' 条，文件改名 ' + d.filesRenamed + ' 个，已排队刮削 ' + d.scraped + ' 条');
     }, function (err) {
-      tableMessage(body, '执行失败', 6);
+      // 把服务端返回的具体原因直接写进表格，避免只显示「执行失败」而无从下手
+      var reason = (err && err.body) ? String(err.body).slice(0, 400) : (err && err.message ? err.message : '未知错误');
+      clear(body);
+      var tr = el('tr');
+      var td = el('td', '', '执行失败：' + reason);
+      td.colSpan = 6;
+      tr.appendChild(td);
+      body.appendChild(tr);
       failToast(err);
     });
   }
