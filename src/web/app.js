@@ -1220,6 +1220,42 @@
     return row;
   }
 
+  // 重命名用的媒体库选择（复用 Libraries 接口）
+  function renderRenameLibraries(selected) {
+    var box = $('rnLibraryList');
+    if (!box) { return; }
+    clear(box);
+    var libs = state.libraries || [];
+    if (!libs.length) {
+      box.appendChild(el('p', 'cs-hint', '暂无媒体库：请先在控制台「媒体库」里添加影片库。'));
+      return;
+    }
+    var chosen = {};
+    (selected || []).forEach(function (id) { chosen[id] = true; });
+    libs.forEach(function (lib) {
+      var row = el('label', 'cs-lib-item');
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.className = 'cs-lib-check';
+      cb.value = lib.id;
+      cb.checked = Object.prototype.hasOwnProperty.call(chosen, lib.id);
+      row.appendChild(cb);
+      row.appendChild(el('span', 'cs-lib-name', lib.name || '(未命名媒体库)'));
+      row.appendChild(el('span', 'cs-lib-meta', (lib.itemCount || 0) + ' 条'));
+      box.appendChild(row);
+    });
+  }
+
+  function selectedRenameLibraries() {
+    var box = $('rnLibraryList');
+    if (!box) { return []; }
+    var out = [];
+    Array.prototype.forEach.call(box.querySelectorAll('input.cs-lib-check'), function (cb) {
+      if (cb.checked) { out.push(cb.value); }
+    });
+    return out;
+  }
+
   function collectRenameRules() {
     var box = $('rnRules');
     if (!box) { return []; }
@@ -1260,29 +1296,40 @@
     });
   }
 
-  function runRename(dryRun) {
+  function runRename(dryRun, mode) {
+    mode = mode || 'both';
     var body = $('rnRunBody');
-    tableMessage(body, dryRun ? '预演中…' : '执行中（先重命名，再刮削）…', 6);
-    sendJson('POST', 'Rename/Run', { dryRun: dryRun, rules: collectRenameRules() }).then(function (d) {
+    tableMessage(body, dryRun ? '预演中…' : (mode === 'rename' ? '正在改名（只改 Jellyfin 名称）…' : (mode === 'scrape' ? '正在触发刮削…' : '执行中（先改名，再刮削）…')), 6);
+    sendJson('POST', 'Rename/Run', { dryRun: dryRun, mode: mode, rules: collectRenameRules(), libraryIds: selectedRenameLibraries() }).then(function (d) {
       clear(body);
-      var rows = (d.steps || []).filter(function (s) { return s.renamed || (s.message && s.message.indexOf('失败') >= 0); });
+      // 后端返回 PascalCase（Scanned/Renamed/Steps），这里两种写法都认
+      var steps = d.Steps || d.steps || [];
+      var scanned = (d.Scanned !== undefined) ? d.Scanned : d.scanned;
+      var renamed = (d.Renamed !== undefined) ? d.Renamed : d.renamed;
+      var filesRenamed = (d.FilesRenamed !== undefined) ? d.FilesRenamed : d.filesRenamed;
+      var scraped = (d.Scraped !== undefined) ? d.Scraped : d.scraped;
+      var rows = steps.filter(function (s) {
+        var isRenamed = (s.Renamed !== undefined) ? s.Renamed : s.renamed;
+        var msg = s.Message || s.message || '';
+        return isRenamed || msg.indexOf('失败') >= 0;
+      });
       if (!rows.length) {
         tableMessage(body, dryRun ? '没有可重命名的条目（规则未命中任何影片名称）' : '没有条目被改名', 6);
-        toast('扫描 ' + d.scanned + ' 条，命中 ' + d.renamed + ' 条');
+        toast('扫描 ' + (scanned || 0) + ' 条，命中 ' + (renamed || 0) + ' 条');
         return;
       }
       rows.forEach(function (s) {
         var tr = el('tr');
-        tr.appendChild(el('td', 'cs-ellipsis', s.originalName || ''));
-        tr.appendChild(el('td', 'cs-ellipsis', s.renamedTo || ''));
-        tr.appendChild(el('td', '', s.appliedRule || '—'));
-        tr.appendChild(el('td', '', s.fileRenamed ? '是' : '否'));
-        tr.appendChild(el('td', '', s.scrapeQueued ? '是' : '否'));
-        tr.appendChild(el('td', 'cs-ellipsis', s.message || ''));
+        tr.appendChild(el('td', 'cs-ellipsis', (s.OriginalName !== undefined ? s.OriginalName : s.originalName) || ''));
+        tr.appendChild(el('td', 'cs-ellipsis', (s.RenamedTo !== undefined ? s.RenamedTo : s.renamedTo) || ''));
+        tr.appendChild(el('td', '', (s.AppliedRule !== undefined ? s.AppliedRule : s.appliedRule) || '—'));
+        tr.appendChild(el('td', '', ((s.FileRenamed !== undefined ? s.FileRenamed : s.fileRenamed) ? '是' : '否')));
+        tr.appendChild(el('td', '', ((s.ScrapeQueued !== undefined ? s.ScrapeQueued : s.scrapeQueued) ? '是' : '否')));
+        tr.appendChild(el('td', 'cs-ellipsis', (s.Message !== undefined ? s.Message : s.message) || ''));
         body.appendChild(tr);
       });
-      toast((dryRun ? '预演完成：' : '完成：') + '扫描 ' + d.scanned + ' 条，改名 ' + d.renamed
-        + ' 条，文件改名 ' + d.filesRenamed + ' 个，已排队刮削 ' + d.scraped + ' 条');
+      toast((dryRun ? '预演完成：' : '完成：') + '扫描 ' + (scanned || 0) + ' 条，改名 ' + (renamed || 0)
+        + ' 条，文件改名 ' + (filesRenamed || 0) + ' 个，已排队刮削 ' + (scraped || 0) + ' 条');
     }, function (err) {
       // 把服务端返回的具体原因直接写进表格，避免只显示「执行失败」而无从下手
       var reason = (err && err.body) ? String(err.body).slice(0, 400) : (err && err.message ? err.message : '未知错误');
@@ -2282,6 +2329,8 @@
     if ($('rnWriteName')) { $('rnWriteName').checked = d.renameWriteName !== false; }
     if ($('rnPhysical')) { $('rnPhysical').checked = d.renamePhysicalFiles === true; }
     renderRenameRules(d.renameRules || []);
+    ensureLibraries().then(function () { renderRenameLibraries(d.renameLibraryIds || []); });
+    window.__rnLibs = d.renameLibraryIds || [];
   }
 
   // ---------------- 一键添加刮削源 ----------------
@@ -2408,7 +2457,8 @@
       renameRules: collectRenameRules(),
       renameBeforeScrape: $('rnEnabled') ? $('rnEnabled').checked : true,
       renameWriteName: $('rnWriteName') ? $('rnWriteName').checked : true,
-      renamePhysicalFiles: $('rnPhysical') ? $('rnPhysical').checked : false
+      renamePhysicalFiles: $('rnPhysical') ? $('rnPhysical').checked : false,
+      renameLibraryIds: selectedRenameLibraries()
     };
     var btn = $('stSaveBtn');
     btn.disabled = true;
@@ -2554,8 +2604,9 @@
     safeOn('stTestBtn', 'click', testConnection);
     safeOn('rnAddRule', 'click', function () { $('rnRules').appendChild(ruleRow(null)); });
     safeOn('rnTestBtn', 'click', testRename);
-    safeOn('rnDryBtn', 'click', function () { runRename(true); });
-    safeOn('rnRunBtn', 'click', function () { runRename(false); });
+    safeOn('rnDryBtn', 'click', function () { runRename(true, 'rename'); });
+    safeOn('rnRunBtn', 'click', function () { runRename(false, 'rename'); });
+    safeOn('rnScrapeBtn', 'click', function () { runRename(false, 'scrape'); });
     safeOn('stQuickAdd', 'click', quickAddSource);
     safeOn('rsRefreshBtn', 'click', loadRenameLogs);
     safeOn('stAddSource', 'click', function () {

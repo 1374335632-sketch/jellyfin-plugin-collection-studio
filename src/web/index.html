@@ -425,8 +425,9 @@
             <div class="cs-card-actions">
               <button type="button" class="cs-btn" id="rnAddRule">+ 新增规则</button>
               <button type="button" class="cs-btn" id="rnTestBtn">试算</button>
-              <button type="button" class="cs-btn" id="rnDryBtn">预演</button>
-              <button type="button" class="cs-btn cs-btn-primary" id="rnRunBtn">重命名并刮削</button>
+              <button type="button" class="cs-btn" id="rnDryBtn">预演改名</button>
+              <button type="button" class="cs-btn cs-btn-primary" id="rnRunBtn">只改名</button>
+              <button type="button" class="cs-btn" id="rnScrapeBtn">只刮削</button>
             </div>
           </div>
 
@@ -451,6 +452,11 @@
               执行顺序固定为：重命名 → 写入名称 → 触发刮削。
             </p>
 
+            <div class="cs-field cs-field-block">
+              <span class="cs-label">参与重命名的媒体库 <span class="cs-hint-inline">（不选＝全部媒体库）</span></span>
+              <div class="cs-lib-picker" id="rnLibraryList"></div>
+            </div>
+
             <div class="cs-sources" id="rnRules"></div>
 
             <div class="cs-grid2">
@@ -467,7 +473,7 @@
             <div class="cs-table-wrap">
               <table class="cs-table">
                 <thead>
-                  <tr><th>原名</th><th>改名后</th><th>命中规则</th><th>文件已改名</th><th>已排队刮削</th><th>说明</th></tr>
+                  <tr><th>磁盘文件名</th><th>改名后</th><th>命中规则</th><th>文件已改名</th><th>已排队刮削</th><th>说明</th></tr>
                 </thead>
                 <tbody id="rnRunBody"></tbody>
               </table>

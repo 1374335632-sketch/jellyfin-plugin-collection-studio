@@ -26,6 +26,9 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
 
         /// <summary>是否同时重命名磁盘文件（关闭则只改 Jellyfin 里的名称）。</summary>
         [JsonPropertyName("renamePhysicalFiles")] public bool RenamePhysicalFiles { get; set; } = false;
+
+        /// <summary>参与重命名的媒体库 Id；空表示全部媒体库。</summary>
+        [JsonPropertyName("renameLibraryIds")] public List<string> RenameLibraryIds { get; set; } = new List<string>();
     }
 
     /// <summary>一次磁盘文件重命名的记录，用于误操作复原。</summary>

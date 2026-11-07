@@ -179,12 +179,18 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
             try
             {
                 var dryRun = ReadBool(payload, "dryRun", "DryRun");
+                var modeText = ReadString(payload, "mode", "Mode") ?? "both";
+                var mode = modeText.Equals("rename", StringComparison.OrdinalIgnoreCase) ? ScrapePipeline.RunMode.RenameOnly
+                         : modeText.Equals("scrape", StringComparison.OrdinalIgnoreCase) ? ScrapePipeline.RunMode.ScrapeOnly
+                         : ScrapePipeline.RunMode.RenameThenScrape;
                 var rules = ReadRules(payload, "rules", "Rules");
                 var libraryIds = ReadStringList(payload, "libraryIds", "LibraryIds");
 
                 using var store = Open();
                 var settings = store.GetSettings();
                 if (rules.Count > 0) settings.RenameRules = rules;
+                // 前端未传媒体库时，沿用设置里保存的选择
+                if (libraryIds.Count == 0 && settings.RenameLibraryIds != null) libraryIds = settings.RenameLibraryIds;
 
                 var providerManager = (MediaBrowser.Controller.Providers.IProviderManager)HttpContext.RequestServices
                     .GetService(typeof(MediaBrowser.Controller.Providers.IProviderManager));
@@ -201,7 +207,7 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
                     }).ToList();
                 }
 
-                var result = await pipeline.RunAsync(settings, items, dryRun, CancellationToken.None)
+                var result = await pipeline.RunAsync(settings, items, dryRun, CancellationToken.None, mode)
                     .ConfigureAwait(false);
 
                 // 预演不写日志；真实执行才记录，供「复原」使用
@@ -232,6 +238,16 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
                 }
             }
             return false;
+        }
+
+        private static string ReadString(System.Text.Json.JsonElement node, params string[] names)
+        {
+            foreach (var n in names)
+            {
+                if (!TryProp(node, n, out var v)) continue;
+                if (v.ValueKind == System.Text.Json.JsonValueKind.String) return v.GetString();
+            }
+            return null;
         }
 
         private static List<string> ReadStringList(System.Text.Json.JsonElement node, params string[] names)

@@ -33,6 +33,9 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
         public sealed class StepResult
         {
             public string ItemId { get; set; } = string.Empty;
+            /// <summary>磁盘上的实际文件名（不含扩展名）——重命名的来源。</summary>
+            public string SourceFileName { get; set; } = string.Empty;
+            /// <summary>Jellyfin 里的影片名称（重命名的写入目标）。</summary>
             public string OriginalName { get; set; } = string.Empty;
             public string RenamedTo { get; set; } = string.Empty;
             public string AppliedRule { get; set; } = string.Empty;
@@ -57,21 +60,26 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
         /// <summary>
         /// 按规则重命名并刮削。dryRun=true 时只计算不落盘、不刮削。
         /// </summary>
-        public async Task<RunResult> RunAsync(CsSettings settings, IEnumerable<BaseItem> items, bool dryRun, CancellationToken ct)
+        /// <summary>执行模式：重命名、刮削，或两者依次执行。</summary>
+        public enum RunMode
+        {
+            RenameOnly,
+            ScrapeOnly,
+            RenameThenScrape
+        }
+
+        public async Task<RunResult> RunAsync(CsSettings settings, IEnumerable<BaseItem> items, bool dryRun, CancellationToken ct, RunMode mode = RunMode.RenameThenScrape)
         {
             var result = new RunResult { BatchId = DateTime.Now.ToString("yyyyMMdd_HHmmss_fff") };
             var rules = settings?.RenameRules ?? new List<RenameRule>();
 
-            if (settings == null || !settings.RenameBeforeScrape)
-            {
-                result.Log.Add("未启用「刮削前重命名」，已跳过。");
-                return result;
-            }
+            var doRename = mode == RunMode.RenameOnly || mode == RunMode.RenameThenScrape;
+            var doScrape = mode == RunMode.ScrapeOnly || mode == RunMode.RenameThenScrape;
 
-            if (rules.Count == 0)
+            if (doRename && rules.Count == 0)
             {
-                result.Log.Add("没有配置源名称替换规则，已跳过。");
-                return result;
+                result.Log.Add("没有配置源名称替换规则，重命名已跳过。");
+                doRename = false;
             }
 
             foreach (var item in items ?? Enumerable.Empty<BaseItem>())
@@ -80,16 +88,39 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
                 if (item == null) continue;
                 result.Scanned++;
 
-                var step = new StepResult { ItemId = item.Id.ToString("N"), OriginalName = item.Name ?? string.Empty };
-                // 只依据「源名称」重命名，不看文件路径
-                var (target, changed, rule) = RenameEngine.Apply(item.Name, rules);
+                // 源名称 = 媒体库影片的实际文件地址（磁盘文件名，不含扩展名）
+                var diskName = item.FileNameWithoutExtension;
+                if (string.IsNullOrWhiteSpace(diskName))
+                {
+                    try { diskName = System.IO.Path.GetFileNameWithoutExtension(item.Path ?? string.Empty); } catch { diskName = string.Empty; }
+                }
+                var step = new StepResult
+                {
+                    ItemId = item.Id.ToString("N"),
+                    SourceFileName = diskName ?? string.Empty,
+                    OriginalName = item.Name ?? string.Empty
+                };
+                var (target, changed, rule) = RenameEngine.Apply(diskName, rules);
                 step.RenamedTo = target;
                 step.AppliedRule = rule;
+                // 改写的是 Jellyfin 名称，因此与当前 Jellyfin 名称比较
                 step.Renamed = changed && !string.IsNullOrWhiteSpace(target) && !string.Equals(target, item.Name, StringComparison.Ordinal);
 
                 if (!step.Renamed)
                 {
-                    step.Message = "名称未命中任何规则";
+                    step.Message = doRename ? "文件名未命中任何规则" : "未改名";
+                    // 只做刮削时仍要处理该条目
+                    if (doScrape)
+                    {
+                        try
+                        {
+                            QueueMetadataRefresh(item);
+                            step.ScrapeQueued = true;
+                            result.Scraped++;
+                            step.Message = mode == RunMode.ScrapeOnly ? "已排队刮削" : "未改名，仅排队刮削";
+                        }
+                        catch (Exception ex) { step.Message = "触发刮削失败：" + ex.Message; }
+                    }
                     result.Steps.Add(step);
                     continue;
                 }
@@ -116,7 +147,7 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
                 };
 
                 // 1) 先重命名磁盘文件（可选）。必须在刮削之前完成，否则 MetaTube 仍按旧文件名识别。
-                if (settings.RenamePhysicalFiles)
+                if (doRename && settings.RenamePhysicalFiles)
                 {
                     try
                     {
@@ -136,7 +167,7 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
                 }
 
                 // 2) 写入 Jellyfin 名称（Name 是 MetaTube 识别的主要依据）
-                if (settings.RenameWriteName)
+                if (doRename && settings.RenameWriteName)
                 {
                     try
                     {
@@ -154,16 +185,19 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
                 }
 
                 // 3) 重命名完成后才触发刮削（顺序由上面的代码位置保证）
-                try
+                if (doScrape)
                 {
-                    QueueMetadataRefresh(item);
-                    step.ScrapeQueued = true;
-                    result.Scraped++;
-                }
-                catch (Exception ex)
-                {
-                    step.Message = "触发刮削失败：" + ex.Message;
-                    _logger?.LogWarning("触发刮削失败 {Name}: {Message}", item.Name, ex.Message);
+                    try
+                    {
+                        QueueMetadataRefresh(item);
+                        step.ScrapeQueued = true;
+                        result.Scraped++;
+                    }
+                    catch (Exception ex)
+                    {
+                        step.Message = "触发刮削失败：" + ex.Message;
+                        _logger?.LogWarning("触发刮削失败 {Name}: {Message}", item.Name, ex.Message);
+                    }
                 }
 
                 if (string.IsNullOrEmpty(step.Message))
