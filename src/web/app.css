@@ -807,49 +807,80 @@
 .cs-content > .cs-view { display: none; }
 .cs-content > .cs-view.is-active { display: flex; }
 .cs-content > .cs-view[hidden] { display: none; }
-/* ---------- 可读性修复：宿主主题会覆盖按钮/标签的底色与字色，导致深底深字看不清 ---------- */
-/* 这里对关键交互元素强制高对比配色，不依赖可能被宿主改写的变量。 */
+
+/* ---------- 插件页自带面层 ---------- */
+/* 关键：页面必须有自己完整的背景与前景色。
+   之前没有给 body/.cs-page 设背景，卡片与表格底色为空，
+   文字颜色就只能靠宿主主题推断：深色主题时深底深字，浅色主题时浅底白字，两种都看不清。 */
+html, body {
+  background: var(--cs-bg) !important;
+  color: var(--cs-fg) !important;
+  margin: 0;
+}
+
+.cs-page, #csPageRoot {
+  background: var(--cs-bg) !important;
+  color: var(--cs-fg) !important;
+  padding: 4px 0 24px;
+  min-height: 100%;
+}
+
+/* 卡片：给明确底色，文字才有着落 */
+.cs-card {
+  background: var(--cs-surface) !important;
+  border: 1px solid var(--cs-border) !important;
+  border-radius: var(--cs-radius);
+  color: var(--cs-fg) !important;
+}
+
+.cs-card-title { color: var(--cs-fg) !important; }
+.cs-page-title { color: var(--cs-fg) !important; }
+.cs-page-sub, .cs-hint, .cs-empty { color: var(--cs-fg-dim) !important; }
+.cs-label { color: var(--cs-fg-dim) !important; }
+
+/* 表格：表头浅底深字，单元格透明继承卡片底色 */
+.cs-table { background: transparent !important; color: var(--cs-fg) !important; }
+.cs-table thead th {
+  background: var(--cs-surface-2) !important;
+  color: var(--cs-fg) !important;
+  border-color: var(--cs-border) !important;
+  font-weight: 600;
+}
+.cs-table tbody td {
+  background: transparent !important;
+  color: var(--cs-fg) !important;
+  border-color: var(--cs-border) !important;
+}
+.cs-table tbody tr:hover td { background: var(--cs-surface-2) !important; }
+.cs-table tbody tr:nth-child(even) td { background: rgba(0,0,0,0.02) !important; }
+
+/* 输入类控件同样给明确配色 */
+.cs-input, .cs-select, .cs-textarea, input[type="text"], input[type="search"],
+input[type="number"], input[type="time"], select, textarea {
+  background: var(--cs-surface-2) !important;
+  color: var(--cs-fg) !important;
+  border: 1px solid var(--cs-border) !important;
+}
+
+/* 弹窗 */
+.cs-dialog, .cs-layer {
+  background: var(--cs-surface) !important;
+  color: var(--cs-fg) !important;
+}
+.cs-dialog * { color: inherit; }
+
+/* 按钮：用主题变量，深浅主题都成立 */
 .cs-btn {
-  background: #243040 !important;
-  color: #e8eef5 !important;
-  border: 1px solid #2b3743 !important;
-  font-weight: 500;
+  background: var(--cs-surface-2) !important;
+  color: var(--cs-fg) !important;
+  border: 1px solid var(--cs-border) !important;
 }
-.cs-btn:hover { background: #33445c !important; }
-.cs-btn:disabled { opacity: 0.55 !important; color: #c3cfdb !important; }
-
-.cs-btn-primary {
-  background: #00a4dc !important;
-  color: #ffffff !important;
-  border-color: #00a4dc !important;
-}
+.cs-btn:hover { background: var(--cs-surface-3) !important; }
+.cs-btn-primary { background: var(--cs-accent) !important; color: #fff !important; border-color: var(--cs-accent) !important; }
 .cs-btn-primary:hover { background: #0090c2 !important; }
+.cs-btn-danger, .cs-btn-ghost-danger { background: var(--cs-danger) !important; color: #fff !important; border-color: var(--cs-danger) !important; }
 
-.cs-btn-danger,
-.cs-btn-ghost-danger {
-  background: #e5484d !important;
-  color: #ffffff !important;
-  border-color: #e5484d !important;
-}
-.cs-btn-danger:hover,
-.cs-btn-ghost-danger:hover { background: #cf3b40 !important; }
-
-/* 标签条：未选中用浅底深字，选中用强调底白字，两者都保证可读 */
-.cs-nav-item {
-  background: #243040 !important;
-  color: #dbe6f0 !important;
-  border: 1px solid #2b3743 !important;
-}
-.cs-nav-item:hover { background: #33445c !important; color: #ffffff !important; }
-.cs-nav-item.is-active {
-  background: #00a4dc !important;
-  color: #ffffff !important;
-  border-color: #00a4dc !important;
-  font-weight: 600 !important;
-}
-
-/* 表格与卡片正文同样强制可读 */
-.cs-table th { color: #dbe6f0 !important; background: #243040 !important; }
-.cs-table td { color: #e8eef5 !important; }
-.cs-card-title, .cs-page-title, .cs-label { color: #e8eef5 !important; }
-.cs-hint, .cs-page-sub, .cs-empty { color: #a8b8c8 !important; }
+/* 标签条 */
+.cs-nav-item { background: var(--cs-surface-2) !important; color: var(--cs-fg) !important; border: 1px solid var(--cs-border) !important; }
+.cs-nav-item:hover { background: var(--cs-surface-3) !important; }
+.cs-nav-item.is-active { background: var(--cs-accent) !important; color: #fff !important; border-color: var(--cs-accent) !important; }

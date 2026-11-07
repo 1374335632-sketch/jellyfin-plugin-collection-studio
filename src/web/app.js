@@ -2545,19 +2545,48 @@
   // ===========================================================
   // 主题跟随 Jellyfin
   // ===========================================================
-  function applyTheme() {
-    var dark = null;
+  // 判断宿主题是深还是浅：优先读宿主实际背景亮度（最可靠），
+  // 其次看它写在 documentElement/body 上的 class 与属性，最后才用系统偏好。
+  function detectDarkTheme() {
     try {
-      if (window.ActiveThemeMode !== undefined && window.ActiveThemeMode !== null) {
-        dark = String(window.ActiveThemeMode).toLowerCase().indexOf('dark') >= 0;
+      var mode = window.ActiveThemeMode;
+      if (typeof mode === 'string') {
+        var m = mode.toLowerCase();
+        if (m.indexOf('light') >= 0) { return false; }
+        if (m.indexOf('dark') >= 0) { return true; }
       }
-    } catch (e) { dark = null; }
-    if (dark === null) {
-      try {
-        dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      } catch (e) { dark = true; }
-    }
+    } catch (e) { }
+
+    // 读宿主实际计算的背景色，按亮度判断（不受主题命名影响）
+    try {
+      var hostEl = null;
+      try { if (window.parent && window.parent !== window) { hostEl = window.parent.document.body; } } catch (e) { }
+      if (!hostEl) { hostEl = document.body; }
+      var bg = window.getComputedStyle(hostEl).backgroundColor;
+      var mm = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(bg || '');
+      if (mm) {
+        var r0 = Number(mm[1]), g0 = Number(mm[2]), b0 = Number(mm[3]);
+        var luma = (0.299 * r0 + 0.587 * g0 + 0.114 * b0) / 255;
+        return luma < 0.5;
+      }
+    } catch (e) { }
+
+    try {
+      var cls = (document.documentElement.className || '') + ' ' + ((document.body && document.body.className) || '');
+      if (/light/i.test(cls)) { return false; }
+      if (/dark/i.test(cls)) { return true; }
+      if (document.documentElement.getAttribute('data-theme') === 'light') { return false; }
+    } catch (e) { }
+
+    try { return !(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches); }
+    catch (e) { return true; }
+  }
+
+  function applyTheme() {
+    var dark = detectDarkTheme();
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    // body 也带上，保证内联样式与继承都拿到同一套变量
+    if (document.body) { document.body.setAttribute('data-theme', dark ? 'dark' : 'light'); }
   }
 
   // ===========================================================
