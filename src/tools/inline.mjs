@@ -17,7 +17,7 @@ let bodyInner = bodyMatch[1]
   .replace(/<script[^>]*src="\.\/app\.js"[^>]*><\/script>/gi, '')
   .trim();
 
-const styleTag = '<style>\n/* 合集工坊内联样式 */\n' + css + '\n</style>';
+const styleTag = '<style>\n/* Collection Studio 内联样式 */\n' + css + '\n</style>';
 const scriptTag = '<script>\n' + js.replace(/<\/script/gi, '<\\/script') + '\n</script>';
 
 const fragment = '<div class="cs-page type-interior" data-role="page" id="csPageRoot">\n'

@@ -59,7 +59,7 @@ foreach (var d in Directory.GetDirectories(dir)) {
 for (const zf of zips) {
   const buf = readFileSync(join(distDir, zf));
   const meta = JSON.parse(readZipEntry(buf, 'meta.json').toString('utf8'));
-  const out = join(work, zf.replace(/[^a-z0-9.]/gi, '_'));
+  const out = join(work, zf.replace(/[^a-z0-9.-]/gi, '_'));
   const { mkdirSync } = await import('node:fs');
   mkdirSync(out, { recursive: true });
   writeFileSync(join(out, 'Jellyfin.Plugin.CollectionStudio.dll'), readZipEntry(buf, 'Jellyfin.Plugin.CollectionStudio.dll'));
@@ -71,11 +71,9 @@ try {
   let bad = 0;
   for (const line of res.trim().split(/\r?\n/)) {
     const [name, ver] = line.split('|');
-    const metaVersion = name.indexOf('1.1.0.2') >= 0 ? '1.1.0.2'
-      : name.indexOf('1.1.0.1') >= 0 ? '1.1.0.1'
-      : name.indexOf('1.1.0.0') >= 0 ? '1.1.0.0'
-      : name.indexOf('1.0.0.2') >= 0 ? '1.0.0.2'
-      : name.indexOf('1.0.0.1') >= 0 ? '1.0.0.1' : '1.0.0.0';
+    // 从文件名解析出版本号（形如 Jellyfin.Plugin.CollectionStudio-1.2.0.2-net10.0.zip）
+    const m = name.match(/CollectionStudio-([0-9.]+)-/);
+    const metaVersion = m ? m[1] : '?';
     const ok = ver.trim() === metaVersion;
     if (!ok) bad++;
     console.log((ok ? 'OK   ' : 'FAIL ') + name + '  dll=' + ver + '  expected=' + metaVersion);

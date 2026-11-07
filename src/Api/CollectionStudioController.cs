@@ -163,7 +163,7 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
             using var store = Open();
             var rule = store.Rules.FindById(id);
             if (rule == null) return Error(404, "规则不存在或已被删除。");
-            store.Backup(Plugin.Instance?.Name ?? "合集工坊", "predelete", "删除规则前备份：" + rule.Name);
+            store.Backup(Plugin.Instance?.Name ?? "Collection Studio", "predelete", "删除规则前备份：" + rule.Name);
             store.Rules.Delete(id);
             return Ok(new { ok = true });
         }
@@ -281,7 +281,7 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
             var doc = store.Collections.FindById(id);
             var box = ResolveBoxSet(id);
             if (box == null && doc == null) return Error(404, "合集不存在。");
-            var backup = store.Backup(Plugin.Instance?.Name ?? "合集工坊", "predelete", "删除合集前备份：" + (doc?.Name ?? box?.Name ?? id));
+            var backup = store.Backup(Plugin.Instance?.Name ?? "Collection Studio", "predelete", "删除合集前备份：" + (doc?.Name ?? box?.Name ?? id));
             try
             {
                 if (box != null) _library.DeleteItem(box, new DeleteOptions { DeleteFileLocation = false, DeleteFromExternalProvider = false });
@@ -577,7 +577,7 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
         public ActionResult CreateBackup([FromBody] BackupRequest body)
         {
             using var store = Open();
-            var doc = store.Backup(Plugin.Instance?.Name ?? "合集工坊", "manual", body?.Note ?? "手动备份");
+            var doc = store.Backup(Plugin.Instance?.Name ?? "Collection Studio", "manual", body?.Note ?? "手动备份");
             return Ok(ToSummary(doc));
         }
 
@@ -597,7 +597,7 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
             try { payload = store.ReadPayload(doc); }
             catch (Exception ex) { return Error(500, "备份内容损坏，无法还原：" + ex.Message); }
 
-            store.Backup(Plugin.Instance?.Name ?? "合集工坊", "predelete", "还原前自动备份");
+            store.Backup(Plugin.Instance?.Name ?? "Collection Studio", "predelete", "还原前自动备份");
             foreach (var r in payload.Rules) store.Rules.Upsert(r);
             foreach (var c in payload.Collections)
             {

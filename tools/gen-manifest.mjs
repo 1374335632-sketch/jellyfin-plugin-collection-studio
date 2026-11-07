@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // 生成 Jellyfin 插件仓库清单。用法：node tools/gen-manifest.mjs [baseUrl]
 // 每份清单会累计该 Jellyfin 大版本线的全部已发布版本，服务器端就能看到并选择版本。
-import { writeFileSync, readFileSync, existsSync, readdirSync } from 'node:fs';
+import { writeFileSync, readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,7 +13,7 @@ const DEFAULT_BASE = 'https://gh-proxy.com/https://raw.githubusercontent.com/137
 const base = (process.argv[2] || DEFAULT_BASE).replace(/\/+$/, '');
 
 const GUID = 'c7d1a2b4-9e53-4f18-8a2c-6b3d5e7f9041';
-const NAME = '合集工坊';
+const NAME = 'Collection Studio';
 const OWNER = '1374335632-sketch';
 
 // 每条产品线：目标框架、targetAbi、清单文件名；该线下的所有版本都会被列出
@@ -42,14 +42,17 @@ function collectVersions(tfm) {
     .filter((f) => f.startsWith('Jellyfin.Plugin.CollectionStudio-') && f.endsWith(suffix))
     .map((f) => {
       const version = f.replace('Jellyfin.Plugin.CollectionStudio-', '').replace(suffix, '');
-      const data = readFileSync(join(dir, f));
+      const full = join(dir, f);
+      const data = readFileSync(full);
+      // 用包文件自身的修改时间作为发布时间：每个版本各不相同，界面上能看到真实差异
+      const zipTimestamp = statSync(full).mtime.toISOString().replace(/\.\d{3}Z$/, 'Z');
       return {
         version,
         changelog: changelogFor(version),
         targetAbi: LINE_ABI(tfm),
         sourceUrl: base + '/dist/' + f,
         checksum: createHash('md5').update(data).digest('hex'),
-        timestamp: '2026-11-07T00:00:00Z'
+        timestamp: zipTimestamp
       };
     })
     .sort((a, b) => compareVersion(b.version, a.version));

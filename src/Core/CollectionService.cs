@@ -92,7 +92,7 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
 
             if (store.GetSettings().AutoBackupBeforeApply)
             {
-                result.BackupId = store.Backup(Plugin.Instance?.Name ?? "合集工坊", "auto", "执行规则前自动备份：" + rule.Name).Id;
+                result.BackupId = store.Backup(Plugin.Instance?.Name ?? "Collection Studio", "auto", "执行规则前自动备份：" + rule.Name).Id;
             }
 
             var groups = RuleEngine.Group(index, rule);

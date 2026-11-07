@@ -1,4 +1,4 @@
-# 合集工坊 · Collection Studio
+# Collection Studio
 
 Jellyfin 插件：按元数据（演员 / 导演 / 厂商 / 类型 / 年份 / 自定义条件）自动生成合集，
 支持从 MetaTube 或自定义刮削源搜刮演员/导演写真做封面，并提供改名对照表、Excel 导出与备份还原。全中文界面。
@@ -10,23 +10,23 @@ Jellyfin 插件：按元数据（演员 / 导演 / 厂商 / 类型 / 年份 / �
 控制台 → 插件 → 右上「管理存储库」→ 添加：
 
 ```
-名称：合集工坊
+名称：Collection Studio
 URL ：https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/manifest-12.json
 ```
 
-保存 → 到「目录」页 → 找到「合集工坊」→ 安装 → 重启 Jellyfin。
+保存 → 到「目录」页 → 找到「Collection Studio」→ 安装 → 重启 Jellyfin。
 
 ### Jellyfin 10.10 / 10.11
 
 ```
-名称：合集工坊（10.x）
+名称：Collection Studio（10.x）
 URL ：https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/manifest-10.json
 ```
 
 ### Jellyfin 10.9
 
 ```
-名称：合集工坊（10.9）
+名称：Collection Studio（10.9）
 URL ：https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/manifest-109.json
 ```
 
@@ -55,7 +55,7 @@ URL ：https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/
 
 ## 配置
 
-控制台 → 插件 → 合集工坊 → 设置：
+控制台 → 插件 → Collection Studio → 设置：
 
 - **MetaTube 地址**：形如 `http://192.168.1.2:8080`（不要带 `/v1`）
 - **MetaTube Token**：后端开了鉴权才需要
@@ -98,3 +98,10 @@ https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-s
 ```
 
 两者内容一致，只是取件通道不同。
+
+## 版本与分支
+
+- `main`：全部清单与全部版本包
+- `jellyfin-12` / `jellyfin-10` / `jellyfin-109`：按 Jellyfin 大版本线独立发布，清单文件名为 `manifest.json`
+
+当前版本：**1.2.0.x**（插件名统一为 Collection Studio）。每份清单会累积列出该线的全部历史版本，安装时可在版本列表中选择。

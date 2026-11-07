@@ -2210,6 +2210,26 @@
     };
   }
 
-  init();
+  // 任何初始化异常都不应让整页失去响应：捕获后仍保留已绑定的部分，并把错误暴露出来
+  try {
+    init();
+  } catch (e) {
+    window.__csInitError = e;
+    try { console.error('[Collection Studio] 初始化失败：', e); } catch (ignore) { }
+    // 兜底：至少让标签条能点
+    try {
+      var fallbackRoot = document.querySelector('.cs-page, .cs-app') || document.body;
+      var items = document.querySelectorAll('.cs-nav-item');
+      Array.prototype.forEach.call(items, function (btn) {
+        btn.addEventListener('click', function (ev) {
+          if (ev) { ev.preventDefault(); }
+          try {
+            rootScope = pageRootOf(btn) || fallbackRoot;
+          } catch (ignore) { }
+          try { switchTab(btn.getAttribute('data-tab'), fallbackRoot); } catch (ignore) { }
+        });
+      });
+    } catch (ignore) { }
+  }
 
 })();

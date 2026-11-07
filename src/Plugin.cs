@@ -47,7 +47,7 @@ namespace Jellyfin.Plugin.CollectionStudio
                     guid = Id.ToString("N"),
                     name = Name,
                     overview = "Collection Studio for Jellyfin",
-                    owner = "合集工坊",
+                    owner = "Collection Studio",
                     targetAbi = "0.0.0.0",
                     timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
                     version = Version.ToString(),
@@ -72,7 +72,7 @@ namespace Jellyfin.Plugin.CollectionStudio
 
         public static IXmlSerializer? Xml { get; private set; }
 
-        public override string Name => "合集工坊";
+        public override string Name => "Collection Studio";
 
         public override Guid Id => new Guid("c7d1a2b4-9e53-4f18-8a2c-6b3d5e7f9041");
 
@@ -150,7 +150,7 @@ namespace Jellyfin.Plugin.CollectionStudio
             {
                 Name = "CollectionStudio",
                 EmbeddedResourcePath = GetType().Namespace + ".web.page.html",
-                DisplayName = "合集工坊"
+                DisplayName = "Collection Studio"
             }
         };
     }

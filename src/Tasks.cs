@@ -54,10 +54,10 @@ namespace Jellyfin.Plugin.CollectionStudio
         public volatile bool IsRunning;
         public DateTime? LastRunAt;
 
-        public string Name => "合集工坊：扫描媒体库并应用规则";
+        public string Name => "Collection Studio：扫描媒体库并应用规则";
         public string Key => "CollectionStudioScan";
         public string Description => "扫描媒体库索引，并按已启用的分类规则生成/更新合集。";
-        public string Category => "合集工坊";
+        public string Category => "Collection Studio";
 
         public IEnumerable<TaskTriggerInfo> GetDefaultTriggers() => Array.Empty<TaskTriggerInfo>();
 
@@ -106,7 +106,7 @@ namespace Jellyfin.Plugin.CollectionStudio
             catch (Exception ex)
             {
                 AddLog("任务失败：" + ex.Message);
-                Logger.LogError(ex, "合集工坊任务失败");
+                Logger.LogError(ex, "Collection Studio 任务失败");
             }
             finally
             {
