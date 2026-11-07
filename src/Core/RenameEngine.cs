@@ -103,6 +103,47 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
             return (current, changed, applied);
         }
 
+        /// <summary>展开替换文本里的 $1..$9 与 ${name} 引用。</summary>
+        public static string ExpandGroups(string template, Match m)
+        {
+            if (string.IsNullOrEmpty(template)) return string.Empty;
+            var sb = new System.Text.StringBuilder();
+            for (var i = 0; i < template.Length; i++)
+            {
+                var ch = template[i];
+                if (ch == '\\' && i + 1 < template.Length) { sb.Append(template[i + 1]); i++; continue; }
+                if (ch != '$') { sb.Append(ch); continue; }
+
+                if (i + 1 < template.Length && template[i + 1] == '{')
+                {
+                    var close = template.IndexOf('}', i + 2);
+                    if (close > 0)
+                    {
+                        var nm = template.Substring(i + 2, close - i - 2);
+                        try
+                        {
+                            if (int.TryParse(nm, out var idx) && idx < m.Groups.Count) sb.Append(m.Groups[idx].Value);
+                            else sb.Append(m.Groups[nm].Value);
+                        }
+                        catch { }
+                        i = close;
+                        continue;
+                    }
+                }
+
+                if (i + 1 < template.Length && char.IsDigit(template[i + 1]))
+                {
+                    var idx = template[i + 1] - '0';
+                    if (idx == 0) sb.Append(m.Value);
+                    else if (idx < m.Groups.Count) sb.Append(m.Groups[idx].Value);
+                    i++;
+                    continue;
+                }
+
+                sb.Append(ch);
+            }
+            return sb.ToString();
+        }
         /// <summary>单条替换。字面量模式按「全部出现」替换，正则模式按正则替换。</summary>
         public static string ReplaceOne(string input, string pattern, string replacement, bool isRegex, out bool hit)
         {
@@ -131,12 +172,34 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
                 if (isRegex)
                 {
                     var re = new Regex(pattern, RegexOptions.None);
-                    if (re.IsMatch(input))
+                    var m = re.Match(input);
+                    if (!m.Success) return input;
+                    hit = true;
+
+                    // 提取模式：正则带捕获组时，替换文本留空或含 $1 引用即可「只保留取到的内容」。
+                    // 例：源名 (MAXING)(6666-1105)，规则 \((6666-[0-9-]+)\):  →  6666-1105
+                    var hasGroups = m.Groups.Count > 1;
+                    var repl = replacement ?? string.Empty;
+
+                    if (hasGroups && (repl.Length == 0 || repl.Contains("$")))
                     {
-                        hit = true;
-                        return re.Replace(input, replacement ?? string.Empty);
+                        var built = repl;
+                        if (built.Length == 0)
+                        {
+                            for (var gi = 1; gi < m.Groups.Count; gi++)
+                            {
+                                var gv = m.Groups[gi].Value;
+                                if (!string.IsNullOrEmpty(gv)) { built = gv; break; }
+                            }
+                        }
+                        else
+                        {
+                            built = ExpandGroups(repl, m);
+                        }
+                        return built;
                     }
-                    return input;
+
+                    return re.Replace(input, repl);
                 }
 
                 if (input.Contains(pattern, StringComparison.OrdinalIgnoreCase))
