@@ -50,53 +50,6 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
             WriteIndented = false
         };
 
-        // ---------------------------------------------------------------- 独立页面
-
-        /// <summary>
-        /// 独立的完整页面。Jellyfin 12.4 控制台把插件配置页作为「视图」注入，
-        /// 注入内容里的脚本不会执行，导致页面无法交互；这里返回一份完整 HTML，
-        /// 在浏览器里直接打开（或在配置页里点「打开独立页面」）时脚本正常执行。
-        /// </summary>
-        [HttpGet("/CollectionStudio/Standalone")]
-        [AllowAnonymous]
-        [Produces("text/html")]
-        public ActionResult GetStandalonePage()
-        {
-            try
-            {
-                var asm = typeof(Plugin).Assembly;
-                var name = typeof(Plugin).Namespace + ".web.page.html";
-                using var stream = asm.GetManifestResourceStream(name);
-                if (stream == null) return Error(500, "页面资源缺失：" + name);
-                using var reader = new StreamReader(stream, System.Text.Encoding.UTF8);
-                var fragment = reader.ReadToEnd();
-                // 嵌入资源是「片段」（供控制台注入用）；独立页面必须补成完整文档，
-                // 否则浏览器按怪异模式渲染、样式与脚本都可能不生效。
-                var page = fragment.TrimStart();
-                if (!page.StartsWith("<!", StringComparison.OrdinalIgnoreCase))
-                {
-                    page = "<!doctype html>\n<html lang=\"zh-CN\">\n<head>\n"
-                         + "<meta charset=\"utf-8\" />\n"
-                         + "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n"
-                         + "<title>Collection Studio</title>\n"
-                         + "</head>\n<body>\n"
-                         + page
-                         + "\n</body>\n</html>\n";
-                }
-                return new ContentResult
-                {
-                    Content = page,
-                    ContentType = "text/html; charset=utf-8",
-                    StatusCode = 200
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "读取独立页面失败");
-                return Error(500, ex.Message);
-            }
-        }
-
         // ---------------------------------------------------------------- 状态
 
         [HttpGet("Status")]

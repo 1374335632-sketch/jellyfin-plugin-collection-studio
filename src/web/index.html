@@ -23,20 +23,12 @@
 #cs-radio-settings:checked ~ .cs-tabs label[for="cs-radio-settings"] {
   background: var(--cs-accent-soft); border-color: var(--cs-accent); color: var(--cs-fg); font-weight: 600;
 }
-.cs-standalone {
-  display: inline-block; margin: 0 0 12px; padding: 8px 14px;
-  border-radius: 8px; background: var(--cs-accent); color: #fff;
-  font-weight: 600; text-decoration: none;
-}
-.cs-standalone:hover { filter: brightness(1.1); }
 </style>
 </head>
 <body>
-<div class="cs-page page type-interior" id="csPageRoot" data-role="page" data-cs-root="1">
+<div class="page type-interior pluginConfigurationPage CollectionStudioConfigurationPage cs-page" id="csPageRoot" data-require="emby-input,emby-button,emby-select,emby-checkbox,emby-linkbutton" data-role="page" data-cs-root="1">
   <div data-role="content">
     <div class="content-primary">
-
-              <a class="cs-standalone" href="/CollectionStudio/Standalone" target="_blank" rel="noopener">在新标签页打开完整界面（功能齐全）</a>
       <input type="radio" name="cs-tab" class="cs-radio" id="cs-radio-overview" checked />
         <input type="radio" name="cs-tab" class="cs-radio" id="cs-radio-rules" />
         <input type="radio" name="cs-tab" class="cs-radio" id="cs-radio-collections" />

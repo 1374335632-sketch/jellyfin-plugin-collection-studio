@@ -125,13 +125,16 @@
 
   // 相对路径拼装；有 ApiClient 时用 ApiClient.getUrl，否则用同源兜底
   function apiUrl(p) {
+    // MetaTube 等能在控制台内工作的插件页都用宿主 ApiClient.getUrl：
+    // 它负责正确的 base 前缀与鉴权参数，我们不该自己拼。
     var c = apiClientRef();
     if (c) { return c.getUrl('CollectionStudio/' + p); }
     var base = location.origin;
     var t = authToken();
     var q = p.indexOf('?') >= 0 ? '&' : '?';
-    return base + '/CollectionStudio/' + p + (t ? q + 'api_key=' + encodeURIComponent(t) : '');
+    return base + '/CollectionStudio/' + p + (t ? q + 'ApiKey=' + encodeURIComponent(t) : '');
   }
+
 
   function makeHttpError(status, body) {
     var msg = '';
@@ -155,6 +158,7 @@
       // MediaBrowser Token 形式在 10.x 与 12.x 上都能通过，因此统一用它，旧头留作兼容。
       headers['Authorization'] = 'MediaBrowser Token="' + token + '", Client="CollectionStudio", Device="CollectionStudio", DeviceId="collection-studio", Version="1.0.0"';
       headers['X-Emby-Token'] = token;
+      headers['X-MediaBrowser-Token'] = token;
     }
     var init = { method: opt.method || 'GET', headers: headers, credentials: 'same-origin', cache: 'no-store' };
     if (opt.body !== undefined && opt.body !== null) {
@@ -2220,25 +2224,46 @@
   };
 
   // 任何初始化异常都不应让整页失去响应：捕获后仍保留已绑定的部分，并把错误暴露出来
-  try {
-    init();
-  } catch (e) {
+  function boot() {
+    try { init(); return true; } catch (e) { return e; }
+  }
+
+  function reportBootFailure(e) {
     window.__csInitError = e;
     try { console.error('[Collection Studio] 初始化失败：', e); } catch (ignore) { }
-    // 兜底：至少让标签条能点
     try {
       var fallbackRoot = document.querySelector('.cs-page, .cs-app') || document.body;
       var items = document.querySelectorAll('.cs-nav-item');
       Array.prototype.forEach.call(items, function (btn) {
         btn.addEventListener('click', function (ev) {
           if (ev) { ev.preventDefault(); }
-          try {
-            rootScope = pageRootOf(btn) || fallbackRoot;
-          } catch (ignore) { }
-          try { switchTab(btn.getAttribute('data-tab'), fallbackRoot); } catch (ignore) { }
+          try { rootScope = pageRootOf(btn) || fallbackRoot; } catch (i2) { }
+          try { switchTab(btn.getAttribute('data-tab'), fallbackRoot); } catch (i2) { }
         });
       });
     } catch (ignore) { }
   }
+
+  // 按 Jellyfin 配置页生命周期启动（MetaTube 等插件页正是这样工作的）。
+  function startOnPageShow() {
+    var root = document.querySelector('.pluginConfigurationPage, .cs-page, #csPageRoot');
+    if (!root) { return false; }
+    var run = function () { var r = boot(); if (r !== true) { reportBootFailure(r); } };
+    try {
+      if (window.jQuery) { window.jQuery(root).on('pageshow', run); return true; }
+    } catch (ignore) { }
+    try {
+      root.addEventListener('pageshow', run);
+      root.addEventListener('viewshow', run);
+      if (document.readyState !== 'loading') { run(); }
+      else { document.addEventListener('DOMContentLoaded', run); }
+      return true;
+    } catch (ignore) { return false; }
+  }
+
+  try {
+    if (!startOnPageShow()) { var r0 = boot(); if (r0 !== true) { reportBootFailure(r0); } }
+  } catch (e) { reportBootFailure(e); }
+
 
 })();
