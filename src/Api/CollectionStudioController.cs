@@ -209,7 +209,10 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
 
                 var providerManager = (MediaBrowser.Controller.Providers.IProviderManager)HttpContext.RequestServices
                     .GetService(typeof(MediaBrowser.Controller.Providers.IProviderManager));
-                var pipeline = new ScrapePipeline(_library, providerManager, _logger);
+                // MetadataRefreshOptions 需要 IDirectoryService，必须从容器里取，不能 new
+                var directoryService = (MediaBrowser.Controller.Providers.IDirectoryService)HttpContext.RequestServices
+                    .GetService(typeof(MediaBrowser.Controller.Providers.IDirectoryService));
+                var pipeline = new ScrapePipeline(_library, providerManager, directoryService, _logger);
 
                 var reader = MakeService().Reader;
                 var items = reader.GetAllScannableItems();

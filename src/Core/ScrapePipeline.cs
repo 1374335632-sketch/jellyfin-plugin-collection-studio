@@ -21,12 +21,14 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
     {
         private readonly ILibraryManager _library;
         private readonly IProviderManager _providers;
+        private readonly IDirectoryService _directoryService;
         private readonly ILogger _logger;
 
-        public ScrapePipeline(ILibraryManager library, IProviderManager providers, ILogger logger)
+        public ScrapePipeline(ILibraryManager library, IProviderManager providers, IDirectoryService directoryService, ILogger logger)
         {
             _library = library;
             _providers = providers;
+            _directoryService = directoryService;
             _logger = logger;
         }
 
@@ -263,7 +265,20 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
             }
             catch (Exception ex)
             {
-                return "移动文件失败：" + ex.GetType().Name + " - " + ex.Message;
+                var msg = ex.GetType().Name + " - " + ex.Message;
+                // Read-only file system 是容器挂载层面的问题，给出可执行的排查建议，
+                // 否则用户只会看到一句 IO 异常而无从下手。
+                if (ex.Message != null && ex.Message.IndexOf("Read-only file system", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    msg += "｜该目录在容器内是只读挂载。请在宿主机以可写方式重新挂载媒体目录，"
+                         + "例如 docker run 加 \":rw\"、docker-compose 的 volumes 不要带 \":ro\"，"
+                         + "或检查 bind 挂载的源目录权限与只读属性。";
+                }
+                else if (ex.Message != null && ex.Message.IndexOf("Permission denied", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    msg += "｜容器内用户对该目录没有写权限。可在宿主机执行 chown/chmod 给 jellyfin 用户写权限。";
+                }
+                return "移动文件失败：" + msg;
             }
 
             try { item.Path = target; } catch { }
@@ -273,49 +288,55 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
 
 
         /// <summary>
-        /// 触发元数据刷新。MetadataRefreshOptions 位于服务端程序集，这里用反射构造，
-        /// 以便在 10.9 / 10.11 / 12.4 上都能工作，且强制要求「先重命名后刮削」。
+        /// 触发元数据刷新。
+        /// MetadataRefreshOptions 的正确命名空间是 MediaBrowser.Controller.Providers（不是 .Entities），
+        /// 且构造函数必须传入 IDirectoryService —— 之前用无参反射构造，所以必然失败。
         /// </summary>
         private void QueueMetadataRefresh(BaseItem item)
         {
-            var options = TryCreateRefreshOptions();
-            if (options == null) throw new InvalidOperationException("无法构造 MetadataRefreshOptions");
-
+            var options = CreateRefreshOptions();
+            if (options == null) throw new InvalidOperationException("无法构造 MetadataRefreshOptions（IDirectoryService 未注入？）");
             _providers.QueueRefresh(item.Id, options, RefreshPriority.High);
         }
 
-        private MetadataRefreshOptions TryCreateRefreshOptions()
+        private MetadataRefreshOptions CreateRefreshOptions()
         {
             try
             {
-                var asm = typeof(BaseItem).Assembly;
-                var type = asm.GetType("MediaBrowser.Controller.Entities.MetadataRefreshOptions")
-                           ?? AppDomain.CurrentDomain.GetAssemblies()
-                               .Select(a => a.GetType("MediaBrowser.Controller.Entities.MetadataRefreshOptions"))
-                               .FirstOrDefault(t => t != null);
-                if (type == null) return null;
+                var opts = new MetadataRefreshOptions(_directoryService);
 
-                var ctor = type.GetConstructors(BindingFlags.Public | BindingFlags.Instance).FirstOrDefault();
-                var instance = ctor == null ? Activator.CreateInstance(type) : ctor.Invoke(new object[ctor.GetParameters().Length]);
-                if (instance == null) return null;
-
-                // 尽量让刷新「全量替换元数据」，保证按新名称重新匹配
-                foreach (var prop in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
-                {
-                    if (!prop.CanWrite) continue;
-                    var n = prop.Name.ToLowerInvariant();
-                    if (prop.PropertyType == typeof(bool) && (n.Contains("replace") || n.Contains("force") || n.Contains("recurse") || n.Contains("all") || n.Contains("full")))
-                    {
-                        prop.SetValue(instance, true);
-                    }
-                }
-                return instance as MetadataRefreshOptions;
+                // 让刷新按新名称重新匹配：全量替换元数据，图片不动
+                opts.ReplaceAllMetadata = true;
+                opts.ReplaceAllImages = false;
+                opts.ForceSave = true;
+                opts.RemoveOldMetadata = false;
+                TrySetEnum(opts, "MetadataRefreshMode", new[] { "FullRefresh", "Full", "Default" });
+                return opts;
             }
             catch (Exception ex)
             {
                 _logger?.LogWarning("构造刷新选项失败：{Message}", ex.Message);
                 return null;
             }
+        }
+
+        /// <summary>按候选名设置枚举属性，兼容不同版本的枚举命名。</summary>
+        private static void TrySetEnum(object target, string propName, string[] candidates)
+        {
+            try
+            {
+                var prop = target.GetType().GetProperty(propName);
+                if (prop == null || !prop.CanWrite) return;
+                var names = Enum.GetNames(prop.PropertyType);
+                foreach (var cand in candidates)
+                {
+                    var hit = names.FirstOrDefault(n => n.Equals(cand, StringComparison.OrdinalIgnoreCase));
+                    if (hit == null) continue;
+                    prop.SetValue(target, Enum.Parse(prop.PropertyType, hit));
+                    return;
+                }
+            }
+            catch { }
         }
     }
 }
