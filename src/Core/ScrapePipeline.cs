@@ -186,7 +186,7 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
                     }
                     else
                     {
-                        step.Message = moveError;
+                        AppendReason(step, moveError);
                         result.Log.Add("「" + step.SourceFileName + "」未改磁盘文件：" + moveError);
                         _logger?.LogWarning("重命名磁盘文件失败 {Name}: {Reason}", item.Name, moveError);
                     }
@@ -203,7 +203,7 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
                     }
                     catch (Exception ex)
                     {
-                        step.Message = "写入名称失败：" + ex.Message;
+                        AppendReason(step, "写入名称失败：" + ex.Message);
                         _logger?.LogWarning("写入名称失败 {Name}: {Message}", item.Name, ex.Message);
                         result.Steps.Add(step);
                         continue;
@@ -221,14 +221,19 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
                     }
                     catch (Exception ex)
                     {
-                        step.Message = "触发刮削失败：" + ex.Message;
+                        AppendReason(step, "触发刮削失败：" + ex.Message);
                         _logger?.LogWarning("触发刮削失败 {Name}: {Message}", item.Name, ex.Message);
                     }
                 }
 
-                if (string.IsNullOrEmpty(step.Message))
+                var done = new List<string>();
+                if (nameNeedsChange) done.Add("Jellyfin 名称已改为「" + target + "」");
+                if (step.FileRenamed) done.Add("磁盘文件已改名为「" + target + "」");
+                if (step.ScrapeQueued) done.Add("已排队刮削");
+                if (done.Count > 0)
                 {
-                    step.Message = "已重命名为「" + target + "」并已排队刮削";
+                    var summary = string.Join("；", done);
+                    step.Message = step.Message.Length > 0 ? (summary + "；另有问题：" + step.Message) : summary;
                 }
                 result.Steps.Add(step);
                 result.RenameLogs.Add(logDoc);
@@ -318,6 +323,13 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
                 _logger?.LogWarning("构造刷新选项失败：{Message}", ex.Message);
                 return null;
             }
+        }
+
+        /// <summary>追加一条说明，避免后一步覆盖前一步的结果。</summary>
+        private static void AppendReason(StepResult step, string reason)
+        {
+            if (string.IsNullOrEmpty(reason)) return;
+            step.Message = string.IsNullOrEmpty(step.Message) ? reason : (step.Message + "；" + reason);
         }
 
         /// <summary>按候选名设置枚举属性，兼容不同版本的枚举命名。</summary>
