@@ -103,8 +103,17 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
                 var (target, changed, rule) = RenameEngine.Apply(diskName, rules);
                 step.RenamedTo = target;
                 step.AppliedRule = rule;
-                // 改写的是 Jellyfin 名称，因此与当前 Jellyfin 名称比较
-                step.Renamed = changed && !string.IsNullOrWhiteSpace(target) && !string.Equals(target, item.Name, StringComparison.Ordinal);
+
+                // 规则是否命中，以及两个目标各自是否需要改动——分开判断，
+                // 否则「Jellyfin 名称恰好等于目标名」时会误判为无事可做，连磁盘文件也不改。
+                var nameNeedsChange = settings.RenameWriteName
+                    && changed && !string.IsNullOrWhiteSpace(target)
+                    && !string.Equals(target, item.Name ?? string.Empty, StringComparison.Ordinal);
+                var diskNeedsChange = settings.RenamePhysicalFiles
+                    && changed && !string.IsNullOrWhiteSpace(target)
+                    && !string.Equals(target, diskName ?? string.Empty, StringComparison.Ordinal);
+
+                step.Renamed = nameNeedsChange || diskNeedsChange;
 
                 if (!step.Renamed)
                 {

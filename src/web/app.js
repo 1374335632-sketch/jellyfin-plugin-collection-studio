@@ -2368,11 +2368,23 @@
     });
   }
 
+  // 媒体库文件清单：统一读取当前界面状态，避免 state 被覆盖导致搜索失效
+  function syncLibFileState() {
+    if (!state.libFiles) {
+      state.libFiles = { page: 1, pageSize: 50, sortBy: 'path', sortDesc: false, filter: '', libraryId: '' };
+    }
+    var st = state.libFiles;
+    if ($('lfLibrary')) { st.libraryId = $('lfLibrary').value || ''; }
+    if ($('lfFilter')) { st.filter = $('lfFilter').value || ''; }
+    if ($('lfPageSize')) { st.pageSize = Number($('lfPageSize').value) || st.pageSize || 50; }
+    if (!st.sortBy) { st.sortBy = 'path'; }
+    return st;
+  }
+
   function loadLibraryFiles() {
     var body = $('lfBody');
     if (!body) { return; }
-    var st = state.libFiles;
-    st.libraryId = $('lfLibrary') ? $('lfLibrary').value : '';
+    var st = syncLibFileState();
     tableMessage(body, '读取中…', 6);
     var q = 'LibraryFiles?page=' + st.page + '&pageSize=' + st.pageSize +
       '&libraryId=' + encodeURIComponent(st.libraryId || '') +
@@ -2724,10 +2736,13 @@
     });
     var __lfTimer = null;
     safeOn('lfFilter', 'input', function () {
-      var st = state.libFiles;
-      st.filter = $('lfFilter').value;
+      if (!state.libFiles) { state.libFiles = { page: 1, pageSize: 50, sortBy: 'path', sortDesc: false, filter: '', libraryId: '' }; }
+      state.libFiles.filter = $('lfFilter').value || '';
       if (__lfTimer) { clearTimeout(__lfTimer); }
-      __lfTimer = setTimeout(function () { st.page = 1; loadLibraryFiles(); }, 350);
+      __lfTimer = setTimeout(function () {
+        state.libFiles.page = 1;
+        loadLibraryFiles();
+      }, 350);
     });
     safeOn('stQuickAdd', 'click', quickAddSource);
     safeOn('rsRefreshBtn', 'click', loadRenameLogs);
