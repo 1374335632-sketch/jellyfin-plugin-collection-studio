@@ -1149,21 +1149,13 @@
     head.appendChild(del);
     row.appendChild(head);
 
-    var grid = el('div', 'cs-grid2');
+    var grid = el('div', 'cs-field');
     grid.appendChild(wrapField('规则（模式:替换）', function () {
       var inp = document.createElement('input');
       inp.className = 'cs-input';
       inp.type = 'text';
       inp.value = r.pattern || '';
       inp.placeholder = '例如 *@:';
-      return inp;
-    }));
-    grid.appendChild(wrapField('仅路径包含（留空=全部）', function () {
-      var inp = document.createElement('input');
-      inp.className = 'cs-input';
-      inp.type = 'text';
-      inp.value = r.onlyIfPathContains || '';
-      inp.placeholder = '可留空';
       return inp;
     }));
     row.appendChild(grid);
@@ -1184,7 +1176,7 @@
         id: '',
         pattern: pattern,
         enabled: row.__enabled.checked,
-        onlyIfPathContains: inputs[1] ? inputs[1].value.trim() : '',
+        onlyIfPathContains: '',
         note: ''
       });
     });

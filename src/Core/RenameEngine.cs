@@ -78,7 +78,7 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
         /// 按要求把源名称替换成目标名称。多条规则依次生效，只要有一条命中就返回 true。
         /// 未命中任何规则时返回原名（changed=false）。
         /// </summary>
-        public static (string result, bool changed, string appliedRule) Apply(string source, IEnumerable<RenameRule> rules, string path)
+        public static (string result, bool changed, string appliedRule) Apply(string source, IEnumerable<RenameRule> rules)
         {
             var current = source ?? string.Empty;
             var changed = false;
@@ -87,12 +87,6 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
             foreach (var rule in rules ?? Enumerable.Empty<RenameRule>())
             {
                 if (rule == null || !rule.Enabled) continue;
-                if (!string.IsNullOrWhiteSpace(rule.OnlyIfPathContains)
-                    && !string.Equals(rule.OnlyIfPathContains.Trim(), "*", StringComparison.Ordinal)
-                    && !(path ?? string.Empty).Contains(rule.OnlyIfPathContains.Trim(), StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
 
                 var (pattern, replacement, isRegex) = ParseRuleText(rule.Pattern);
                 if (string.IsNullOrEmpty(pattern)) continue;

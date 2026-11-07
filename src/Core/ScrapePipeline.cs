@@ -79,7 +79,8 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
                 result.Scanned++;
 
                 var step = new StepResult { ItemId = item.Id.ToString("N"), OriginalName = item.Name ?? string.Empty };
-                var (target, changed, rule) = RenameEngine.Apply(item.Name, rules, item.Path);
+                // 只依据「源名称」重命名，不看文件路径
+                var (target, changed, rule) = RenameEngine.Apply(item.Name, rules);
                 step.RenamedTo = target;
                 step.AppliedRule = rule;
                 step.Renamed = changed && !string.IsNullOrWhiteSpace(target) && !string.Equals(target, item.Name, StringComparison.Ordinal);
