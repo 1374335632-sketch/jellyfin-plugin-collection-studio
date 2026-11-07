@@ -48,6 +48,8 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
             public int Renamed { get; set; }
             public int FilesRenamed { get; set; }
             public int Scraped { get; set; }
+            public string BatchId { get; set; } = string.Empty;
+            public List<RenameLogDoc> RenameLogs { get; set; } = new List<RenameLogDoc>();
             public List<StepResult> Steps { get; set; } = new List<StepResult>();
             public List<string> Log { get; set; } = new List<string>();
         }
@@ -57,7 +59,7 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
         /// </summary>
         public async Task<RunResult> RunAsync(CsSettings settings, IEnumerable<BaseItem> items, bool dryRun, CancellationToken ct)
         {
-            var result = new RunResult();
+            var result = new RunResult { BatchId = DateTime.Now.ToString("yyyyMMdd_HHmmss_fff") };
             var rules = settings?.RenameRules ?? new List<RenameRule>();
 
             if (settings == null || !settings.RenameBeforeScrape)
@@ -101,13 +103,30 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
                     continue;
                 }
 
+                // 记录可复原信息：原名/原路径与新名/新路径
+                var logDoc = new RenameLogDoc
+                {
+                    BatchId = result.BatchId,
+                    ItemId = item.Id.ToString("N"),
+                    OldName = step.OriginalName,
+                    NewName = target,
+                    OldPath = item.Path ?? string.Empty,
+                    NewPath = item.Path ?? string.Empty,
+                    NameChanged = settings.RenameWriteName
+                };
+
                 // 1) 先重命名磁盘文件（可选）。必须在刮削之前完成，否则 MetaTube 仍按旧文件名识别。
                 if (settings.RenamePhysicalFiles)
                 {
                     try
                     {
                         step.FileRenamed = RenamePhysicalFile(item, target);
-                        if (step.FileRenamed) result.FilesRenamed++;
+                        if (step.FileRenamed)
+                        {
+                            result.FilesRenamed++;
+                            logDoc.FileMoved = true;
+                            logDoc.NewPath = item.Path ?? string.Empty;
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -152,6 +171,7 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
                     step.Message = "已重命名为「" + target + "」并已排队刮削";
                 }
                 result.Steps.Add(step);
+                result.RenameLogs.Add(logDoc);
             }
 
             return result;

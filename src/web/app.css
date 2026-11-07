@@ -807,3 +807,49 @@
 .cs-content > .cs-view { display: none; }
 .cs-content > .cs-view.is-active { display: flex; }
 .cs-content > .cs-view[hidden] { display: none; }
+/* ---------- 可读性修复：宿主主题会覆盖按钮/标签的底色与字色，导致深底深字看不清 ---------- */
+/* 这里对关键交互元素强制高对比配色，不依赖可能被宿主改写的变量。 */
+.cs-btn {
+  background: #243040 !important;
+  color: #e8eef5 !important;
+  border: 1px solid #2b3743 !important;
+  font-weight: 500;
+}
+.cs-btn:hover { background: #33445c !important; }
+.cs-btn:disabled { opacity: 0.55 !important; color: #c3cfdb !important; }
+
+.cs-btn-primary {
+  background: #00a4dc !important;
+  color: #ffffff !important;
+  border-color: #00a4dc !important;
+}
+.cs-btn-primary:hover { background: #0090c2 !important; }
+
+.cs-btn-danger,
+.cs-btn-ghost-danger {
+  background: #e5484d !important;
+  color: #ffffff !important;
+  border-color: #e5484d !important;
+}
+.cs-btn-danger:hover,
+.cs-btn-ghost-danger:hover { background: #cf3b40 !important; }
+
+/* 标签条：未选中用浅底深字，选中用强调底白字，两者都保证可读 */
+.cs-nav-item {
+  background: #243040 !important;
+  color: #dbe6f0 !important;
+  border: 1px solid #2b3743 !important;
+}
+.cs-nav-item:hover { background: #33445c !important; color: #ffffff !important; }
+.cs-nav-item.is-active {
+  background: #00a4dc !important;
+  color: #ffffff !important;
+  border-color: #00a4dc !important;
+  font-weight: 600 !important;
+}
+
+/* 表格与卡片正文同样强制可读 */
+.cs-table th { color: #dbe6f0 !important; background: #243040 !important; }
+.cs-table td { color: #e8eef5 !important; }
+.cs-card-title, .cs-page-title, .cs-label { color: #e8eef5 !important; }
+.cs-hint, .cs-page-sub, .cs-empty { color: #a8b8c8 !important; }

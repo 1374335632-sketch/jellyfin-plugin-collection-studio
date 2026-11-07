@@ -30,13 +30,16 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
         private readonly ICollectionManager _collections;
         private readonly IServerApplicationHost _host;
         private readonly ILogger<CollectionStudioController> _logger;
+        private readonly MediaBrowser.Model.Tasks.ITaskManager _scheduler;
 
         public CollectionStudioController(ILibraryManager library, ICollectionManager collections,
-            IServerApplicationHost host, ILogger<CollectionStudioController> logger)
+            IServerApplicationHost host, MediaBrowser.Model.Tasks.ITaskManager scheduler,
+            ILogger<CollectionStudioController> logger)
         {
             _library = library;
             _collections = collections;
             _host = host;
+            _scheduler = scheduler;
             _logger = logger;
         }
 
@@ -50,6 +53,85 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
             PropertyNamingPolicy = null,
             WriteIndented = false
         };
+
+        /// <summary>一键添加写真刮削源：只给一个网址，自动推断出可用的源配置。</summary>
+        [HttpPost("Covers/AddSourceByUrl")]
+        public ActionResult AddSourceByUrl([FromBody] AddSourceRequest body)
+        {
+            if (body == null || string.IsNullOrWhiteSpace(body.Url)) return Error(400, "请填写刮削源网址。");
+            var raw = body.Url.Trim();
+
+            string name = body.Name;
+            string urlTemplate = raw;
+            string imagesPath = "images[*]";
+            string imageBase = string.Empty;
+            var notes = new List<string>();
+
+            try
+            {
+                var uri = new Uri(raw);
+                // 若给的是 index.json 之类的清单地址，尝试从路径推断源名
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    var seg = uri.AbsolutePath.Trim('/').Split('/');
+                    name = seg.Length > 0 && seg[seg.Length - 1].Contains('.')
+                        ? (seg.Length > 1 ? seg[seg.Length - 2] : "自定义源")
+                        : seg[seg.Length - 1];
+                    if (string.IsNullOrWhiteSpace(name)) name = uri.Host;
+                }
+
+                // 常见写真源都是「GET {base}/{id}.json」形态：若给的是目录或域名，自动补模板
+                if (!urlTemplate.Contains("{id}") && !urlTemplate.Contains("{0}"))
+                {
+                    if (uri.AbsolutePath.EndsWith("/", StringComparison.Ordinal) || string.IsNullOrEmpty(uri.AbsolutePath.Trim('/')))
+                    {
+                        urlTemplate = raw.TrimEnd('/') + "/{id}.json";
+                        notes.Add("未检测到 {id} 占位符，已按「目录/{id}.json」补全，可稍后微调。");
+                    }
+                }
+
+                // 补全 imageBaseUrl：默认取响应的 host
+                imageBase = uri.GetLeftPart(UriPartial.Authority);
+            }
+            catch (Exception ex)
+            {
+                return Error(400, "网址格式不正确：" + ex.Message);
+            }
+
+            if (string.IsNullOrWhiteSpace(name)) name = "自定义源";
+
+            using var store = Open();
+            var settings = store.GetSettings();
+            settings.CustomSources ??= new List<CustomSource>();
+
+            var id = Guid.NewGuid().ToString("N");
+            var src = new CustomSource
+            {
+                Id = id,
+                Name = name,
+                UrlTemplate = urlTemplate,
+                ImagesPath = imagesPath,
+                ImageBaseUrl = imageBase,
+                Headers = new List<HeaderPair>()
+            };
+            settings.CustomSources.Add(src);
+            // 顺便把 MetaTube 之外的第一个源设为当前写真来源
+            settings.MetaTubeActorProvider = name;
+            store.SaveSettings(settings);
+
+            return Ok(new
+            {
+                ok = true,
+                source = new { id, name, urlTemplate, imagesPath, imageBaseUrl = imageBase },
+                notes
+            });
+        }
+
+        public sealed class AddSourceRequest
+        {
+            public string Url { get; set; }
+            public string Name { get; set; }
+        }
 
         // ---------------------------------------------------------------- 源名称替换 + 刮削
 
@@ -116,6 +198,12 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
 
             var result = await pipeline.RunAsync(settings, items, body?.DryRun ?? false, CancellationToken.None)
                 .ConfigureAwait(false);
+
+            // 预演不写日志；真实执行才记录，供「复原」使用
+            if (!(body?.DryRun ?? false) && result.RenameLogs.Count > 0)
+            {
+                foreach (var log in result.RenameLogs) { store.RenameLogs.Upsert(log); }
+            }
             return Ok(result);
         }
 
@@ -130,6 +218,95 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
             public bool DryRun { get; set; }
             public List<string> LibraryIds { get; set; }
             public List<RenameRule> Rules { get; set; }
+        }
+
+        /// <summary>重命名历史（用于复原）。</summary>
+        [HttpGet("Rename/Logs")]
+        public ActionResult GetRenameLogs()
+        {
+            using var store = Open();
+            var rows = store.RenameLogs.FindAll()
+                .OrderByDescending(x => x.CreatedAt)
+                .Take(500)
+                .Select(x => new
+                {
+                    batchId = x.BatchId,
+                    itemId = x.ItemId,
+                    oldName = x.OldName,
+                    newName = x.NewName,
+                    oldPath = x.OldPath,
+                    newPath = x.NewPath,
+                    fileMoved = x.FileMoved,
+                    nameChanged = x.NameChanged,
+                    restored = x.Restored,
+                    createdAt = x.CreatedAt
+                })
+                .ToList();
+            var batches = rows.GroupBy(x => x.batchId)
+                .Select(g => new { batchId = g.Key, count = g.Count(), createdAt = g.Max(y => y.createdAt) })
+                .ToList();
+            return Ok(new { rows, batches });
+        }
+
+        /// <summary>复原重命名：把文件搬回原名、把 Jellyfin 名称改回原名。可按批次或单条。</summary>
+        [HttpPost("Rename/Restore")]
+        public async Task<ActionResult> RestoreRename([FromBody] RestoreRenameRequest body)
+        {
+            if (body == null || (string.IsNullOrWhiteSpace(body.BatchId) && string.IsNullOrWhiteSpace(body.LogId)))
+            {
+                return Error(400, "请指定要复原的批次或单条记录。");
+            }
+            using var store = Open();
+            var targets = body.LogId != null
+                ? store.RenameLogs.Find(x => x.Id == body.LogId).ToList()
+                : store.RenameLogs.Find(x => x.BatchId == body.BatchId).ToList();
+
+            var restored = 0;
+            var failed = new List<object>();
+
+            foreach (var log in targets)
+            {
+                if (log.Restored) continue;
+                try
+                {
+                    // 1) 文件搬回原路径（若当初确实移动过）
+                    if (log.FileMoved && !string.IsNullOrWhiteSpace(log.OldPath) && !string.IsNullOrWhiteSpace(log.NewPath))
+                    {
+                        if (System.IO.File.Exists(log.NewPath) && !System.IO.File.Exists(log.OldPath))
+                        {
+                            System.IO.File.Move(log.NewPath, log.OldPath);
+                        }
+                    }
+
+                    // 2) Jellyfin 名称改回原名
+                    if (log.NameChanged && !string.IsNullOrWhiteSpace(log.OldName))
+                    {
+                        var item = _library.GetItemById(Guid.Parse(log.ItemId));
+                        if (item == null) return Error(404, "影片已不存在，无法复原名称。");
+                        item.Name = log.OldName;
+                        await _library.UpdateItemAsync(item, item.GetParent(), ItemUpdateType.MetadataEdit, CancellationToken.None)
+                            .ConfigureAwait(false);
+                    }
+
+                    log.Restored = true;
+                    log.RestoredAt = DateTime.Now;
+                    store.RenameLogs.Update(log);
+                    restored++;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "复原重命名失败 {Id}", log.Id);
+                    failed.Add(new { id = log.Id, message = ex.Message });
+                }
+            }
+
+            return Ok(new { ok = true, restored, failed });
+        }
+
+        public sealed class RestoreRenameRequest
+        {
+            public string BatchId { get; set; }
+            public string LogId { get; set; }
         }
 
         // ---------------------------------------------------------------- 完整页面
@@ -510,6 +687,65 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
             return Ok(new { ok = true, backupId = backup.Id, backupName = backup.Name });
         }
 
+        /// <summary>一次性删除多个合集（只删合集条目，绝不删除媒体文件）。</summary>
+        [HttpPost("Collections/BulkDelete")]
+        public ActionResult BulkDeleteCollections([FromBody] BulkDeleteRequest body)
+        {
+            if (body == null || body.Ids == null || body.Ids.Count == 0) return Error(400, "没有选择要删除的合集。");
+            using var store = Open();
+            var deleted = new List<string>();
+            var failed = new List<object>();
+
+            // 整批只备份一次，避免每删一个就写一个备份
+            try { store.Backup(Plugin.Instance?.Name ?? "Collection Studio", "predelete", "批量删除合集前备份（" + body.Ids.Count + " 个）"); }
+            catch (Exception ex) { _logger.LogWarning("批量删除前备份失败：{Message}", ex.Message); }
+
+            foreach (var id in body.Ids)
+            {
+                if (string.IsNullOrWhiteSpace(id)) continue;
+                try
+                {
+                    var box = ResolveBoxSet(id);
+                    // DeleteFileLocation=false：仅移除合集条目，媒体文件保持原样
+                    if (box != null)
+                    {
+                        _library.DeleteItem(box, new DeleteOptions { DeleteFileLocation = false, DeleteFromExternalProvider = false });
+                    }
+                    store.Collections.Delete(id);
+                    deleted.Add(id);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "删除合集 {Id} 失败", id);
+                    failed.Add(new { id, message = ex.Message });
+                }
+            }
+
+            return Ok(new { ok = true, deletedCount = deleted.Count, deleted, failed });
+        }
+
+        /// <summary>清理失效的合集记录：Jellyfin 里已不存在的合集，同步从表格中移除。</summary>
+        [HttpPost("Collections/Prune")]
+        public ActionResult PruneCollections()
+        {
+            using var store = Open();
+            var removed = 0;
+            foreach (var doc in store.Collections.FindAll().ToList())
+            {
+                if (ResolveBoxSet(doc.Id) == null)
+                {
+                    store.Collections.Delete(doc.Id);
+                    removed++;
+                }
+            }
+            return Ok(new { ok = true, removed, remaining = store.Collections.Count() });
+        }
+
+        public sealed class BulkDeleteRequest
+        {
+            public List<string> Ids { get; set; } = new List<string>();
+        }
+
         [HttpPost("Collections/{id}/Cover")]
         public ActionResult SetCover(string id, [FromBody] CoverRequest body)
         {
@@ -842,6 +1078,159 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
             if (store.Backups.FindById(id) == null) return Error(404, "备份不存在或已被删除。");
             store.Backups.Delete(id);
             return Ok(new { ok = true });
+        }
+
+        // ---------------------------------------------------------------- 定时任务触发器
+
+        /// <summary>把触发器的 Type 设为「每日」——不同版本枚举类型名不同，用反射设置。</summary>
+        private static void SetTriggerType(MediaBrowser.Model.Tasks.TaskTriggerInfo info, string prefix)
+        {
+            try
+            {
+                var prop = info.GetType().GetProperty("Type");
+                if (prop == null || !prop.CanWrite) return;
+                var enumType = prop.PropertyType;
+                var names = Enum.GetNames(enumType);
+                var pick = names.FirstOrDefault(n => n.Equals(prefix + "Trigger", StringComparison.OrdinalIgnoreCase))
+                           ?? names.FirstOrDefault(n => n.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                           ?? names.FirstOrDefault();
+                if (pick != null) prop.SetValue(info, Enum.Parse(enumType, pick));
+            }
+            catch { }
+        }
+
+        /// <summary>判断某触发器是否为「每日」类型（跨版本）。</summary>
+        private static bool IsDaily(MediaBrowser.Model.Tasks.TaskTriggerInfo info)
+        {
+            try
+            {
+                var prop = info.GetType().GetProperty("Type");
+                if (prop == null) return false;
+                var v = prop.GetValue(info);
+                return v != null && v.ToString().StartsWith("Daily", StringComparison.OrdinalIgnoreCase);
+            }
+            catch { return false; }
+        }
+
+        /// <summary>取 worker 上的触发器列表，兼容数组与集合两种返回类型。</summary>
+        private static List<MediaBrowser.Model.Tasks.TaskTriggerInfo> TriggerList(MediaBrowser.Model.Tasks.IScheduledTaskWorker worker)
+        {
+            var list = new List<MediaBrowser.Model.Tasks.TaskTriggerInfo>();
+            try
+            {
+                var raw = worker?.Triggers;
+                if (raw == null) return list;
+                foreach (var t in (IEnumerable<MediaBrowser.Model.Tasks.TaskTriggerInfo>)raw)
+                {
+                    if (t != null) list.Add(t);
+                }
+            }
+            catch { }
+            return list;
+        }
+
+        /// <summary>写回触发器，兼容 10.9 的数组类型与之后的集合类型。</summary>
+        private static void SetTriggers(MediaBrowser.Model.Tasks.IScheduledTaskWorker worker, List<MediaBrowser.Model.Tasks.TaskTriggerInfo> list)
+        {
+            var prop = worker.GetType().GetProperty("Triggers");
+            if (prop == null || !prop.CanWrite) return;
+            var target = prop.PropertyType;
+            if (target.IsArray)
+            {
+                var elem = target.GetElementType();
+                var arr = Array.CreateInstance(elem, list.Count);
+                for (var i = 0; i < list.Count; i++) arr.SetValue(list[i], i);
+                prop.SetValue(worker, arr);
+            }
+            else
+            {
+                prop.SetValue(worker, list);
+            }
+        }
+
+        /// <summary>按任务键名找到调度器里的 worker（用于读写触发器）。</summary>
+        private MediaBrowser.Model.Tasks.IScheduledTaskWorker FindWorker()
+        {
+            var list = _scheduler.ScheduledTasks;
+            if (list == null) return null;
+            foreach (var w in list)
+            {
+                if (w == null) continue;
+                if (string.Equals(w.ScheduledTask?.Key, "CollectionStudioScan", StringComparison.OrdinalIgnoreCase)) return w;
+                if (string.Equals(w.ScheduledTask?.GetType().Name, "CollectionStudioScan", StringComparison.OrdinalIgnoreCase)) return w;
+            }
+            return list.FirstOrDefault();
+        }
+
+
+
+        /// <summary>读取扫描任务的触发器配置。</summary>
+        [HttpGet("Tasks/Trigger")]
+        public ActionResult GetTaskTrigger()
+        {
+            try
+            {
+                var worker = FindWorker();
+                if (worker == null) return Error(404, "找不到扫描任务。");
+                var current = TriggerList(worker);
+                return Ok(new { triggers = current });
+            }
+            catch (Exception ex)
+            {
+                return Error(500, ex.Message);
+            }
+        }
+
+        /// <summary>设置扫描任务的每日运行时间（例 "03:30"）。</summary>
+        [HttpPost("Tasks/Trigger")]
+        public ActionResult SetTaskTrigger([FromBody] TaskTriggerRequest body)
+        {
+            var time = body?.DailyTime?.Trim();
+            if (string.IsNullOrWhiteSpace(time)) return Error(400, "请提供每日运行时间，例如 03:30。");
+            var parts = time.Split(':');
+            if (parts.Length < 2) return Error(400, "时间格式应为 HH:mm。");
+            int hh, mm;
+            try { hh = int.Parse(parts[0]); mm = int.Parse(parts[1]); }
+            catch { return Error(400, "时间格式应为 HH:mm。"); }
+            if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return Error(400, "时间超出范围。");
+
+            try
+            {
+                var worker = FindWorker();
+                if (worker == null) return Error(404, "找不到扫描任务。");
+
+                var triggers = new List<MediaBrowser.Model.Tasks.TaskTriggerInfo>();
+                if (body.DailyEnabled)
+                {
+                    var daily = new MediaBrowser.Model.Tasks.TaskTriggerInfo
+                    {
+                        TimeOfDayTicks = TimeSpan.FromHours(hh).Add(TimeSpan.FromMinutes(mm)).Ticks,
+                        MaxRuntimeTicks = TimeSpan.FromHours(6).Ticks
+                    };
+                    SetTriggerType(daily, "Daily");
+                    triggers.Add(daily);
+                }
+                // 保留非每日类触发器（例如启动时触发）
+                foreach (var t in TriggerList(worker))
+                {
+                    if (!IsDaily(t)) triggers.Add(t);
+                }
+
+                SetTriggers(worker, triggers);
+                worker.ReloadTriggerEvents();
+                return Ok(new { ok = true, dailyTime = time, dailyEnabled = body.DailyEnabled, triggers = triggers.Count });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "设置任务触发时间失败");
+                return Error(500, "设置失败：" + ex.Message);
+            }
+        }
+
+        public sealed class TaskTriggerRequest
+        {
+            public string DailyTime { get; set; }
+            public bool DailyEnabled { get; set; } = true;
         }
 
         // ---------------------------------------------------------------- 任务

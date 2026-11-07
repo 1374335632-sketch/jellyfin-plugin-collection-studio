@@ -28,6 +28,23 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
         [JsonPropertyName("renamePhysicalFiles")] public bool RenamePhysicalFiles { get; set; } = false;
     }
 
+    /// <summary>一次磁盘文件重命名的记录，用于误操作复原。</summary>
+    public sealed class RenameLogDoc
+    {
+        [BsonId] [JsonPropertyName("id")] public string Id { get; set; } = Guid.NewGuid().ToString("N");
+        [JsonPropertyName("batchId")] public string BatchId { get; set; } = string.Empty;
+        [JsonPropertyName("itemId")] public string ItemId { get; set; } = string.Empty;
+        [JsonPropertyName("oldName")] public string OldName { get; set; } = string.Empty;
+        [JsonPropertyName("newName")] public string NewName { get; set; } = string.Empty;
+        [JsonPropertyName("oldPath")] public string OldPath { get; set; } = string.Empty;
+        [JsonPropertyName("newPath")] public string NewPath { get; set; } = string.Empty;
+        [JsonPropertyName("fileMoved")] public bool FileMoved { get; set; }
+        [JsonPropertyName("nameChanged")] public bool NameChanged { get; set; }
+        [JsonPropertyName("restored")] public bool Restored { get; set; }
+        [JsonPropertyName("restoredAt")] public DateTime? RestoredAt { get; set; }
+        [JsonPropertyName("createdAt")] public DateTime CreatedAt { get; set; } = DateTime.Now;
+    }
+
     /// <summary>
     /// 一条源名称替换规则。规则文本形如 「*@：」或 「pattern:replacement」：
     /// 冒号前是匹配模式（支持正则；若整行不含正则元字符则按字面替换），

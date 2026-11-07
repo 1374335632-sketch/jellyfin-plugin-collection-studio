@@ -23,6 +23,7 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Jellyfin.Controller" Version="$(JfControllerVersion)" />
+    <PackageReference Include="Jellyfin.Model" Version="$(JfControllerVersion)" />
     <PackageReference Include="LiteDB" Version="5.0.21" />
   </ItemGroup>
 

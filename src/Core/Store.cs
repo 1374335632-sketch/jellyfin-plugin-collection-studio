@@ -22,6 +22,7 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
             Collections.EnsureIndex(x => x.RuleId);
             Items.EnsureIndex(x => x.Name);
             Backups.EnsureIndex(x => x.CreatedAt);
+            RenameLogs.EnsureIndex(x => x.CreatedAt);
         }
 
         public string FilePath { get; private set; } = string.Empty;
@@ -33,6 +34,8 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
         public ILiteCollection<IndexItemDoc> Items => _db.GetCollection<IndexItemDoc>("items");
 
         public ILiteCollection<BackupDoc> Backups => _db.GetCollection<BackupDoc>("backups");
+
+        public ILiteCollection<RenameLogDoc> RenameLogs => _db.GetCollection<RenameLogDoc>("renameLogs");
 
         private ILiteCollection<SettingsDoc> SettingsCollection => _db.GetCollection<SettingsDoc>("settings");
 

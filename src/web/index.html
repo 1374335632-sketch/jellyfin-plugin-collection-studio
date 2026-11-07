@@ -69,6 +69,21 @@
               <tbody id="ovTasksBody"></tbody>
             </table>
           </div>
+          <div class="cs-grid3" style="margin-top:12px;">
+            <label class="cs-field">
+              <span class="cs-label">扫描任务每日启动时间</span>
+              <input class="cs-input" id="ovTaskTime" type="time" value="03:30" />
+            </label>
+            <label class="cs-field cs-field-inline">
+              <input type="checkbox" id="ovTaskDailyEnabled" checked />
+              <span class="cs-inline-text">启用每日定时</span>
+            </label>
+            <div class="cs-field">
+              <span class="cs-label">&nbsp;</span>
+              <button type="button" class="cs-btn cs-btn-primary" id="ovTaskTimeSave">保存启动时间</button>
+            </div>
+          </div>
+          <p class="cs-hint">保存后立即生效，无需重启。启动时触发会被保留，每日定时按这里的时间执行。</p>
         </div>
 
         <div class="cs-card">
@@ -215,13 +230,17 @@
           <div class="cs-card-head">
             <h2 class="cs-card-title">合集列表</h2>
             <div class="cs-card-actions">
+              <button type="button" class="cs-btn" id="colSelectAllBtn">全选</button>
+              <button type="button" class="cs-btn cs-btn-danger" id="colBulkDeleteBtn">删除选中</button>
+              <button type="button" class="cs-btn" id="colPruneBtn">清理失效记录</button>
               <button type="button" class="cs-btn" id="colRefreshBtn">刷新</button>
             </div>
           </div>
+          <p class="cs-hint">删除合集只会移除合集条目，<strong>不会删除任何媒体文件</strong>。批量删除前会自动做一次备份。</p>
           <div class="cs-table-wrap">
             <table class="cs-table">
               <thead>
-                <tr><th>封面</th><th>合集名</th><th>所属规则</th><th>影片数</th><th>更新时间</th><th>操作</th></tr>
+                <tr><th style="width:36px;"><input type="checkbox" id="colCheckAll" /></th><th>封面</th><th>合集名</th><th>所属规则</th><th>影片数</th><th>更新时间</th><th>操作</th></tr>
               </thead>
               <tbody id="colListBody"></tbody>
             </table>
@@ -255,7 +274,14 @@
           <div class="cs-table-wrap">
             <table class="cs-table">
               <thead>
-                <tr><th>路径</th><th>原始名称</th><th>Jellyfin 名称</th><th>类型</th><th>年份</th><th>所属合集</th></tr>
+                <tr>
+                  <th class="cs-sortable" data-sort="path">路径</th>
+                  <th class="cs-sortable" data-sort="originalTitle">原始名称</th>
+                  <th class="cs-sortable" data-sort="name">Jellyfin 名称</th>
+                  <th class="cs-sortable" data-sort="kind">类型</th>
+                  <th class="cs-sortable" data-sort="year">年份</th>
+                  <th>所属合集</th>
+                </tr>
               </thead>
               <tbody id="rnListBody"></tbody>
             </table>
@@ -274,6 +300,24 @@
       </section>
 
       <section class="cs-view" id="view-backups" data-view="backups" hidden>
+        <div class="cs-card">
+          <div class="cs-card-head">
+            <h2 class="cs-card-title">重命名复原（误操作回滚）</h2>
+            <div class="cs-card-actions">
+              <button type="button" class="cs-btn" id="rsRefreshBtn">刷新记录</button>
+            </div>
+          </div>
+          <p class="cs-hint">每次「重命名并刮削」都会记录原文件名与原路径。这里可以按批次一键复原，把磁盘文件搬回原名、并把 Jellyfin 名称改回原名。媒体文件本身不会被删除。</p>
+          <div class="cs-table-wrap">
+            <table class="cs-table">
+              <thead>
+                <tr><th>批次</th><th>条数</th><th>时间</th><th>操作</th></tr>
+              </thead>
+              <tbody id="rsBatchBody"></tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="cs-card">
           <div class="cs-card-head">
             <h2 class="cs-card-title">备份列表</h2>
@@ -358,6 +402,20 @@
               <button type="button" class="cs-btn" id="stAddSource">+ 新增刮削源</button>
             </div>
           </div>
+          <div class="cs-grid2" style="margin-bottom:10px;">
+            <label class="cs-field">
+              <span class="cs-label">一键添加：粘贴刮削源网址</span>
+              <input class="cs-input" id="stQuickUrl" type="text" placeholder="例如 https://example.com/data/" />
+            </label>
+            <div class="cs-field">
+              <span class="cs-label">源名称（可留空，自动推断）</span>
+              <div style="display:flex;gap:8px;">
+                <input class="cs-input" id="stQuickName" type="text" placeholder="可留空" />
+                <button type="button" class="cs-btn cs-btn-primary" id="stQuickAdd">一键添加</button>
+              </div>
+            </div>
+          </div>
+          <p class="cs-hint">粘贴网址后点「一键添加」即可创建写真刮削源；若网址缺少 {id} 占位符，会自动按「目录/{id}.json」补全。</p>
           <div class="cs-sources" id="stSources"></div>
         </div>
 

@@ -537,7 +537,7 @@
     rules: [],
     editingRuleId: null,
     collections: [],
-    rename: { page: 1, pageSize: 50, filter: '', total: 0, rows: [] },
+    rename: { page: 1, pageSize: 50, filter: '', total: 0, rows: [], sortBy: 'name', sortDesc: false },
     backups: [],
     settings: null,
     tasks: [],
@@ -591,9 +591,12 @@
   function loadTab(tab) {
     if (tab === 'overview') { loadOverview(); }
     else if (tab === 'rules') { loadRules(); }
-    else if (tab === 'collections') { loadCollections(); }
-    else if (tab === 'rename') { loadRename(); }
-    else if (tab === 'backups') { loadBackups(); }
+    else if (tab === 'collections') {
+      // 每次进入合集页都重新拉取，避免手动在 Jellyfin 删除后表格仍显示旧数据
+      pruneThenLoad();
+    }
+    else if (tab === 'rename') { bindRenameSort(); loadRename(); }
+    else if (tab === 'backups') { loadBackups(); loadRenameLogs(); }
     else if (tab === 'settings') { loadSettings(); }
   }
 
@@ -632,6 +635,41 @@
     grid.appendChild(statCell('最近索引时间', fmtDate(s.lastIndexedAt), 'is-dim'));
   }
 
+  // ---------------- 定时任务启动时间 ----------------
+  function loadTaskTrigger() {
+    getJson('Tasks/Trigger').then(function (d) {
+      var list = (d && d.triggers) || [];
+      var daily = null;
+      list.forEach(function (t) {
+        if (t.type === 'DailyTrigger' || t.Type === 'DailyTrigger') { daily = t; }
+      });
+      if (daily) {
+        var ticks = daily.timeOfDayTicks !== undefined ? daily.timeOfDayTicks : daily.TimeOfDayTicks;
+        if (ticks !== null && ticks !== undefined) {
+          var totalMin = Math.floor(Number(ticks) / 600000000 / 60);
+          var hh = Math.floor(totalMin / 60);
+          var mm = totalMin % 60;
+          var str = (hh < 10 ? '0' : '') + hh + ':' + (mm < 10 ? '0' : '') + mm;
+          if ($('ovTaskTime')) { $('ovTaskTime').value = str; }
+          if ($('ovTaskDailyEnabled')) { $('ovTaskDailyEnabled').checked = true; }
+        }
+      } else if ($('ovTaskDailyEnabled')) {
+        $('ovTaskDailyEnabled').checked = false;
+      }
+    }, function () { });
+  }
+
+  function saveTaskTrigger() {
+    var time = $('ovTaskTime').value || '03:30';
+    var enabled = $('ovTaskDailyEnabled').checked;
+    sendJson('POST', 'Tasks/Trigger', { dailyTime: time, dailyEnabled: enabled }).then(function () {
+      toast('已保存：每日 ' + time + (enabled ? ' 自动扫描' : '（已关闭）'));
+      loadTaskTrigger();
+    }, function (err) {
+      toast('保存失败：' + (err && err.body ? err.body : ''), 'error');
+    });
+  }
+
   function loadOverview() {
     clear($('ovStatusGrid'));
     $('ovStatusGrid').appendChild(statCell('插件状态', '加载中…', 'is-dim'));
@@ -642,6 +680,7 @@
       $('ovStatusGrid').appendChild(statCell('插件状态', '加载失败', 'is-warn'));
       failToast(err);
     }).then(loadTasks);
+    loadTaskTrigger();
   }
 
   function renderTasks(list) {
@@ -1424,11 +1463,19 @@
     var tbody = $('colListBody');
     clear(tbody);
     if (!state.collections.length) {
-      tableMessage(tbody, '暂无数据', 6);
+      tableMessage(tbody, '暂无数据', 7);
       return;
     }
     state.collections.forEach(function (c) {
       var tr = el('tr');
+
+      var checkCell = el('td');
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.className = 'cs-row-check';
+      cb.value = c.id;
+      checkCell.appendChild(cb);
+      tr.appendChild(checkCell);
 
       var coverCell = el('td');
       coverCell.appendChild(makeThumb(c.coverUrl));
@@ -1450,13 +1497,64 @@
     });
   }
 
+  // ---------------- 合集批量操作 ----------------
+  function selectedCollectionIds() {
+    var box = $('colListBody');
+    if (!box) { return []; }
+    var out = [];
+    Array.prototype.forEach.call(box.querySelectorAll('input.cs-row-check'), function (cb) {
+      if (cb.checked) { out.push(cb.value); }
+    });
+    return out;
+  }
+
+  function bulkDeleteCollections() {
+    var ids = selectedCollectionIds();
+    if (!ids.length) { toast('请先勾选要删除的合集', 'error'); return; }
+    var dlg = openDialog({ title: '删除选中合集（' + ids.length + ' 个）' });
+    var body = el('div', 'cs-form');
+    dlg.setBody(body);
+    body.appendChild(el('p', 'cs-hint', '只移除合集条目，不会删除任何媒体文件。删除前会自动备份。'));
+    var actions = el('div', 'cs-actions');
+    actions.appendChild(makeButton('取消', 'cs-btn-sm', function () { dlg.close(); }));
+    actions.appendChild(makeButton('确认删除', 'cs-btn-sm cs-btn-danger', function () {
+      dlg.close();
+      sendJson('POST', 'Collections/BulkDelete', { ids: ids }).then(function (res) {
+        toast('已删除 ' + (res.deletedCount || 0) + ' 个合集');
+        if (res.failed && res.failed.length) { toast(res.failed.length + ' 个删除失败', 'error'); }
+        loadCollections();
+      }, function (err) {
+        toast('批量删除失败：' + (err && err.body ? err.body : ''), 'error');
+      });
+    }));
+    body.appendChild(actions);
+  }
+
+  function pruneCollections() {
+    sendJson('POST', 'Collections/Prune', {}).then(function (res) {
+      toast('已清理 ' + (res.removed || 0) + ' 条失效记录，剩余 ' + (res.remaining || 0) + ' 个合集');
+      loadCollections();
+    }, function (err) {
+      toast('清理失败', 'error');
+    });
+  }
+
+  // 进入合集页：先清理 Jellyfin 里已不存在的记录，再拉列表，保证表格与实际一致
+  function pruneThenLoad() {
+    sendJson('POST', 'Collections/Prune', {}).then(function () {
+      loadCollections();
+    }, function () {
+      loadCollections();
+    });
+  }
+
   function loadCollections() {
-    tableMessage($('colListBody'), '加载中…', 6);
+    tableMessage($('colListBody'), '加载中…', 7);
     getJson('Collections').then(function (list) {
       state.collections = Array.isArray(list) ? list : [];
       renderCollections();
     }, function (err) {
-      tableMessage($('colListBody'), '加载失败', 6);
+      tableMessage($('colListBody'), '加载失败', 7);
       failToast(err);
     });
   }
@@ -1647,7 +1745,7 @@
     var st = state.rename;
     clear(tbody);
     if (!st.rows.length) {
-      tableMessage(tbody, '暂无数据', 6);
+      tableMessage(tbody, '暂无数据', 7);
     } else {
       st.rows.forEach(function (r) {
         var tr = el('tr');
@@ -1678,11 +1776,28 @@
     $('rnJump').max = String(pages);
   }
 
+  // ---------------- 改名对照：表头排序 ----------------
+  function bindRenameSort() {
+    var heads = document.querySelectorAll('#view-rename th.cs-sortable');
+    Array.prototype.forEach.call(heads, function (th) {
+      th.addEventListener('click', function () {
+        var key = th.getAttribute('data-sort');
+        var st = state.rename;
+        if (st.sortBy === key) { st.sortDesc = !st.sortDesc; } else { st.sortBy = key; st.sortDesc = false; }
+        st.page = 1;
+        Array.prototype.forEach.call(heads, function (h) { h.removeAttribute('data-order'); });
+        th.setAttribute('data-order', st.sortDesc ? 'desc' : 'asc');
+        loadRename();
+      });
+    });
+  }
+
   function renameQuery(extra) {
     var st = state.rename;
     var q = 'Rename?page=' + st.page + '&pageSize=' + st.pageSize +
       '&filter=' + encodeURIComponent(st.filter) +
-      '&sortBy=name&sortDesc=false';
+      '&sortBy=' + encodeURIComponent(st.sortBy || 'name') +
+      '&sortDesc=' + (st.sortDesc ? 'true' : 'false');
     return q + (extra || '');
   }
 
@@ -2144,6 +2259,104 @@
     renderRenameRules(d.renameRules || []);
   }
 
+  // ---------------- 一键添加刮削源 ----------------
+  function quickAddSource() {
+    var url = $('stQuickUrl').value.trim();
+    var name = $('stQuickName').value.trim();
+    if (!url) { toast('请先粘贴刮削源网址', 'error'); return; }
+    var btn = $('stQuickAdd');
+    btn.disabled = true;
+    sendJson('POST', 'Covers/AddSourceByUrl', { url: url, name: name }).then(function (res) {
+      btn.disabled = false;
+      toast('已添加刮削源「' + (res.source && res.source.name ? res.source.name : '') + '」');
+      (res.notes || []).forEach(function (n) { toast(n); });
+      $('stQuickUrl').value = '';
+      $('stQuickName').value = '';
+      loadSettings();
+    }, function (err) {
+      btn.disabled = false;
+      toast('添加失败：' + (err && err.body ? err.body : ''), 'error');
+    });
+  }
+
+  // ---------------- 重命名复原 ----------------
+  function loadRenameLogs() {
+    var body = $('rsBatchBody');
+    if (!body) { return; }
+    tableMessage(body, '加载中…', 4);
+    getJson('Rename/Logs').then(function (d) {
+      clear(body);
+      var batches = (d.batches || []);
+      if (!batches.length) {
+        tableMessage(body, '暂无重命名记录', 4);
+        return;
+      }
+      batches.forEach(function (b) {
+        var tr = el('tr');
+        tr.appendChild(el('td', '', b.batchId || '—'));
+        tr.appendChild(el('td', '', String(b.count || 0)));
+        tr.appendChild(el('td', '', fmtDate(b.createdAt)));
+        var cell = el('td');
+        var ops = el('div', 'cs-actions');
+        ops.appendChild(makeButton('查看明细', 'cs-btn-sm', function () { showRenameDetail(b.batchId, d.rows || []); }));
+        ops.appendChild(makeButton('复原此批', 'cs-btn-sm cs-btn-primary', function () {
+          restoreBatch(b.batchId, b.count);
+        }));
+        cell.appendChild(ops);
+        tr.appendChild(cell);
+        body.appendChild(tr);
+      });
+    }, function (err) {
+      tableMessage(body, '加载失败', 4);
+      failToast(err);
+    });
+  }
+
+  function showRenameDetail(batchId, rows) {
+    var dlg = openDialog({ title: '重命名明细：' + batchId, wide: true });
+    var body = el('div', 'cs-form');
+    dlg.setBody(body);
+    var list = rows.filter(function (r) { return r.batchId === batchId; });
+    var table = el('table', 'cs-table');
+    var thead = el('thead');
+    var htr = el('tr');
+    ['原名', '改名后', '原路径', '新路径', '状态'].forEach(function (t) { htr.appendChild(el('th', '', t)); });
+    thead.appendChild(htr);
+    table.appendChild(thead);
+    var tb = el('tbody');
+    list.forEach(function (r) {
+      var tr = el('tr');
+      tr.appendChild(el('td', 'cs-ellipsis', r.oldName || ''));
+      tr.appendChild(el('td', 'cs-ellipsis', r.newName || ''));
+      tr.appendChild(el('td', 'cs-ellipsis', r.oldPath || ''));
+      tr.appendChild(el('td', 'cs-ellipsis', r.newPath || ''));
+      tr.appendChild(el('td', '', r.restored ? '已复原' : '可复原'));
+      tb.appendChild(tr);
+    });
+    table.appendChild(tb);
+    body.appendChild(table);
+  }
+
+  function restoreBatch(batchId, count) {
+    var dlg = openDialog({ title: '复原重命名：' + batchId });
+    var body = el('div', 'cs-form');
+    dlg.setBody(body);
+    body.appendChild(el('p', 'cs-hint', '将把 ' + (count || 0) + ' 条记录的文件搬回原名，并把 Jellyfin 名称改回原名。'));
+    var actions = el('div', 'cs-actions');
+    actions.appendChild(makeButton('取消', 'cs-btn-sm', function () { dlg.close(); }));
+    actions.appendChild(makeButton('确认复原', 'cs-btn-sm cs-btn-primary', function () {
+      dlg.close();
+      sendJson('POST', 'Rename/Restore', { batchId: batchId }).then(function (res) {
+        toast('已复原 ' + (res.restored || 0) + ' 条');
+        if (res.failed && res.failed.length) { toast(res.failed.length + ' 条复原失败', 'error'); }
+        loadRenameLogs();
+      }, function (err) {
+        toast('复原失败：' + (err && err.body ? err.body : ''), 'error');
+      });
+    }));
+    body.appendChild(actions);
+  }
+
   function loadSettings() {
     $('stSources').setAttribute('data-loading', '1');
     clear($('stSources'));
@@ -2255,6 +2468,7 @@
       });
     });
     safeOn('ovTasksRefresh', 'click', loadTasks);
+    safeOn('ovTaskTimeSave', 'click', saveTaskTrigger);
     safeOn('ovLogTaskSelect', 'change', loadTaskLog);
     safeOn('ovLogRefresh', 'click', loadTaskLog);
 
@@ -2273,6 +2487,16 @@
     });
 
     safeOn('colRefreshBtn', 'click', loadCollections);
+    safeOn('colBulkDeleteBtn', 'click', bulkDeleteCollections);
+    safeOn('colPruneBtn', 'click', pruneCollections);
+    safeOn('colSelectAllBtn', 'click', function () {
+      var box = $('colListBody');
+      if (!box) { return; }
+      var all = box.querySelectorAll('input.cs-row-check');
+      var anyUnchecked = false;
+      Array.prototype.forEach.call(all, function (cb) { if (!cb.checked) { anyUnchecked = true; } });
+      Array.prototype.forEach.call(all, function (cb) { cb.checked = anyUnchecked; });
+    });
 
     var filterTimer = null;
     safeOn('rnFilter', 'input', function () {
@@ -2307,6 +2531,8 @@
     safeOn('rnTestBtn', 'click', testRename);
     safeOn('rnDryBtn', 'click', function () { runRename(true); });
     safeOn('rnRunBtn', 'click', function () { runRename(false); });
+    safeOn('stQuickAdd', 'click', quickAddSource);
+    safeOn('rsRefreshBtn', 'click', loadRenameLogs);
     safeOn('stAddSource', 'click', function () {
       var box = $('stSources');
       var empty = box.querySelector('.cs-sources-empty');
