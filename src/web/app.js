@@ -560,6 +560,7 @@
     settings: null,
     tasks: [],
     libraries: [],
+    libFiles: { page: 1, pageSize: 50, sortBy: 'path', sortDesc: false, filter: '', libraryId: '' },
     currentTab: 'overview'
   };
 
@@ -615,7 +616,7 @@
     }
     else if (tab === 'rename') { bindRenameSort(); loadRename(); }
     else if (tab === 'backups') { loadBackups(); loadRenameLogs(); }
-    else if (tab === 'settings') { loadSettings(); }
+    else if (tab === 'settings') { loadSettings(); bindLibFileSort(); ensureLibraries().then(function () { fillLibrarySelect('lfLibrary'); loadLibraryFiles(); }); }
   }
 
   // ===========================================================
@@ -2333,6 +2334,92 @@
     window.__rnLibs = d.renameLibraryIds || [];
   }
 
+  // ---------------- 媒体库文件清单 ----------------
+  function fmtBytes(n) {
+    var b = Number(n) || 0;
+    if (b < 1024) { return b + ' B'; }
+    var kb = b / 1024;
+    if (kb < 1024) { return Math.round(kb) + ' KB'; }
+    var mb = kb / 1024;
+    if (mb < 1024) { return mb.toFixed(1) + ' MB'; }
+    return (mb / 1024).toFixed(2) + ' GB';
+  }
+
+  function fillLibrarySelect(sel) {
+    var box = $(sel);
+    if (!box) { return; }
+    clear(box);
+    var all = document.createElement('option');
+    all.value = '';
+    all.textContent = '全部媒体库';
+    box.appendChild(all);
+    (state.libraries || []).forEach(function (lib) {
+      var op = document.createElement('option');
+      op.value = lib.id;
+      op.textContent = (lib.name || '(未命名)') + '（' + (lib.itemCount || 0) + ' 条）';
+      box.appendChild(op);
+    });
+  }
+
+  function loadLibraryFiles() {
+    var body = $('lfBody');
+    if (!body) { return; }
+    var st = state.libFiles;
+    st.libraryId = $('lfLibrary') ? $('lfLibrary').value : '';
+    tableMessage(body, '读取中…', 6);
+    var q = 'LibraryFiles?page=' + st.page + '&pageSize=' + st.pageSize +
+      '&libraryId=' + encodeURIComponent(st.libraryId || '') +
+      '&filter=' + encodeURIComponent(st.filter || '') +
+      '&sortBy=' + encodeURIComponent(st.sortBy || 'path') +
+      '&sortDesc=' + (st.sortDesc ? 'true' : 'false');
+    getJson(q).then(function (d) {
+      clear(body);
+      var rows = d.rows || [];
+      if (!rows.length) {
+        tableMessage(body, '没有读取到文件（请确认该媒体库存在影片）', 6);
+      } else {
+        rows.forEach(function (r) {
+          var tr = el('tr');
+          tr.appendChild(el('td', 'cs-ellipsis', r.path || ''));
+          tr.appendChild(el('td', 'cs-ellipsis', r.fileName || ''));
+          tr.appendChild(el('td', '', r.modifiedAt || '—'));
+          tr.appendChild(el('td', '', fmtBytes(r.sizeBytes)));
+          tr.appendChild(el('td', 'cs-ellipsis', r.jellyfinName || ''));
+          var stateCell = el('td');
+          if (r.nameMismatch) {
+            stateCell.appendChild(makeBadge('名称不一致', 'cs-badge-warn'));
+          } else {
+            stateCell.appendChild(el('span', 'cs-hint', '一致'));
+          }
+          tr.appendChild(stateCell);
+          body.appendChild(tr);
+        });
+      }
+      if ($('lfInfo')) {
+        $('lfInfo').textContent = '共 ' + (d.total || 0) + ' 条，第 ' + (d.page || 1) + ' 页';
+      }
+    }, function (err) {
+      tableMessage(body, '读取失败', 6);
+      failToast(err);
+    });
+  }
+
+  function bindLibFileSort() {
+    var heads = document.querySelectorAll('#view-settings th.cs-sortable');
+    Array.prototype.forEach.call(heads, function (th) {
+      if (th.__csBound) { return; }
+      th.__csBound = true;
+      th.addEventListener('click', function () {
+        var st = state.libFiles;
+        var key = th.getAttribute('data-sort');
+        if (st.sortBy === key) { st.sortDesc = !st.sortDesc; } else { st.sortBy = key; st.sortDesc = false; }
+        st.page = 1;
+        Array.prototype.forEach.call(heads, function (h) { h.removeAttribute('data-order'); });
+        th.setAttribute('data-order', st.sortDesc ? 'desc' : 'asc');
+        loadLibraryFiles();
+      });
+    });
+  }
   // ---------------- 一键添加刮削源 ----------------
   function quickAddSource() {
     var url = $('stQuickUrl').value.trim();
@@ -2607,6 +2694,34 @@
     safeOn('rnDryBtn', 'click', function () { runRename(true, 'rename'); });
     safeOn('rnRunBtn', 'click', function () { runRename(false, 'rename'); });
     safeOn('rnScrapeBtn', 'click', function () { runRename(false, 'scrape'); });
+    safeOn('lfRefreshBtn', 'click', loadLibraryFiles);
+    safeOn('lfPrev', 'click', function () {
+      var st = state.libFiles;
+      if (st.page > 1) { st.page = st.page - 1; loadLibraryFiles(); }
+    });
+    safeOn('lfNext', 'click', function () {
+      var st = state.libFiles;
+      st.page = st.page + 1;
+      loadLibraryFiles();
+    });
+    safeOn('lfPageSize', 'change', function () {
+      var st = state.libFiles;
+      st.pageSize = Number($('lfPageSize').value) || 50;
+      st.page = 1;
+      loadLibraryFiles();
+    });
+    safeOn('lfLibrary', 'change', function () {
+      var st = state.libFiles;
+      st.page = 1;
+      loadLibraryFiles();
+    });
+    var __lfTimer = null;
+    safeOn('lfFilter', 'input', function () {
+      var st = state.libFiles;
+      st.filter = $('lfFilter').value;
+      if (__lfTimer) { clearTimeout(__lfTimer); }
+      __lfTimer = setTimeout(function () { st.page = 1; loadLibraryFiles(); }, 350);
+    });
     safeOn('stQuickAdd', 'click', quickAddSource);
     safeOn('rsRefreshBtn', 'click', loadRenameLogs);
     safeOn('stAddSource', 'click', function () {

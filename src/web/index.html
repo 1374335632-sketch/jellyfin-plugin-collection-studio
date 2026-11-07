@@ -421,6 +421,54 @@
 
         <div class="cs-card">
           <div class="cs-card-head">
+            <h2 class="cs-card-title">媒体库文件清单（排查命名）</h2>
+            <div class="cs-card-actions">
+              <button type="button" class="cs-btn" id="lfRefreshBtn">刷新</button>
+            </div>
+          </div>
+          <p class="cs-hint">列出所选媒体库里影片的磁盘路径、文件名、修改日期与大小，并标出「文件名与 Jellyfin 名称不一致」的条目，方便排查命名问题。数据实时读取磁盘。</p>
+          <div class="cs-toolbar">
+            <label class="cs-field cs-field-inline cs-grow">
+              <span class="cs-label">媒体库</span>
+              <select class="cs-select" id="lfLibrary"><option value="">全部媒体库</option></select>
+            </label>
+            <label class="cs-field cs-field-inline cs-grow">
+              <span class="cs-label">筛选（路径 / 文件名）</span>
+              <input class="cs-input" id="lfFilter" type="search" placeholder="输入关键字，停止输入 350ms 后自动筛选" />
+            </label>
+            <label class="cs-field cs-field-inline">
+              <span class="cs-label">每页</span>
+              <select class="cs-select" id="lfPageSize">
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="200">200</option>
+              </select>
+            </label>
+          </div>
+          <div class="cs-table-wrap">
+            <table class="cs-table">
+              <thead>
+                <tr>
+                  <th class="cs-sortable" data-sort="path">磁盘路径</th>
+                  <th class="cs-sortable" data-sort="filename">磁盘影片名称</th>
+                  <th class="cs-sortable" data-sort="modified">修改日期</th>
+                  <th class="cs-sortable" data-sort="size">大小</th>
+                  <th>Jellyfin 名称</th>
+                  <th>状态</th>
+                </tr>
+              </thead>
+              <tbody id="lfBody"></tbody>
+            </table>
+          </div>
+          <div class="cs-pager">
+            <button type="button" class="cs-btn" id="lfPrev">上一页</button>
+            <button type="button" class="cs-btn" id="lfNext">下一页</button>
+            <span class="cs-pager-info" id="lfInfo"></span>
+          </div>
+        </div>
+
+        <div class="cs-card">
+          <div class="cs-card-head">
             <h2 class="cs-card-title">源名称替换（刮削前执行）</h2>
             <div class="cs-card-actions">
               <button type="button" class="cs-btn" id="rnAddRule">+ 新增规则</button>

@@ -174,6 +174,19 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
         [JsonPropertyName("indexedAt")] public DateTime IndexedAt { get; set; } = DateTime.Now;
     }
 
+    /// <summary>媒体库文件清单的一行（磁盘实时信息）。</summary>
+    public sealed class LibFileRow
+    {
+        [JsonPropertyName("itemId")] public string ItemId { get; set; } = string.Empty;
+        [JsonPropertyName("path")] public string Path { get; set; } = string.Empty;
+        [JsonPropertyName("fileName")] public string FileName { get; set; } = string.Empty;
+        [JsonPropertyName("jellyfinName")] public string JellyfinName { get; set; } = string.Empty;
+        [JsonPropertyName("libraryName")] public string LibraryName { get; set; } = string.Empty;
+        [JsonPropertyName("sizeBytes")] public long SizeBytes { get; set; }
+        [JsonPropertyName("modifiedAt")] public string ModifiedAt { get; set; } = string.Empty;
+        [JsonPropertyName("nameMismatch")] public bool NameMismatch { get; set; }
+    }
+
     public sealed class BackupDoc
     {
         [JsonPropertyName("id")] public string Id { get; set; } = string.Empty;

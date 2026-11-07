@@ -936,6 +936,111 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
             catch { return new CsSettings(); }
         }
 
+        // ---------------------------------------------------------------- 媒体库文件清单
+
+        /// <summary>
+        /// 按媒体库列出磁盘上的实际文件信息，用于排查命名。
+        /// 路径、文件名、修改时间、大小都是实时从磁盘读取，不使用索引缓存。
+        /// 支持表头正序 / 倒序排序与关键词筛选。
+        /// </summary>
+        [HttpGet("LibraryFiles")]
+        public async Task<ActionResult> GetLibraryFiles([FromQuery] int page, [FromQuery] int pageSize,
+            [FromQuery] string? libraryId = null, [FromQuery] string? filter = null,
+            [FromQuery] string? sortBy = null, [FromQuery] bool sortDesc = false)
+        {
+            var reader = MakeService().Reader;
+            List<IndexItemDoc> docs;
+            try
+            {
+                var items = reader.GetAllScannableItems();
+                docs = new List<IndexItemDoc>();
+                foreach (var it in items)
+                {
+                    try { docs.Add(reader.ToDoc(it)); } catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                return Error(500, "读取媒体库失败：" + ex.Message);
+            }
+
+            if (!string.IsNullOrWhiteSpace(libraryId))
+            {
+                docs = docs.Where(d => string.Equals(d.LibraryId, libraryId.Trim(), StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+
+            var keyword = (filter ?? string.Empty).Trim();
+            if (keyword.Length > 0)
+            {
+                docs = docs.Where(d =>
+                    (d.Path ?? string.Empty).IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    (d.FileName ?? string.Empty).IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    (d.Name ?? string.Empty).IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+            }
+
+            var rows = docs.Select(d =>
+            {
+                long size = 0;
+                DateTime modified = DateTime.MinValue;
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(d.Path) && System.IO.File.Exists(d.Path))
+                    {
+                        var info = new System.IO.FileInfo(d.Path);
+                        size = info.Length;
+                        modified = info.LastWriteTime;
+                    }
+                }
+                catch { }
+
+                return new LibFileRow
+                {
+                    ItemId = d.ItemId,
+                    Path = d.Path ?? string.Empty,
+                    FileName = d.FileName ?? string.Empty,
+                    JellyfinName = d.Name ?? string.Empty,
+                    LibraryName = d.LibraryName ?? string.Empty,
+                    SizeBytes = size,
+                    ModifiedAt = modified == DateTime.MinValue ? string.Empty : modified.ToString("yyyy-MM-dd HH:mm:ss"),
+                    // 名称与文件名不一致时标出来，方便一眼定位可疑项
+                    NameMismatch = !string.Equals((d.FileName ?? string.Empty).Trim(),
+                                                  (d.Name ?? string.Empty).Trim(), StringComparison.OrdinalIgnoreCase)
+                };
+            }).ToList();
+
+            rows = SortLibFiles(rows, sortBy, sortDesc);
+            var sizePage = pageSize <= 0 ? 50 : Math.Clamp(pageSize, 10, 500);
+            var pageIndex = page <= 0 ? 1 : page;
+            var total = rows.Count;
+            var slice = rows.Skip((pageIndex - 1) * sizePage).Take(sizePage).ToList();
+            return Ok(new { total, page = pageIndex, pageSize = sizePage, rows = slice });
+        }
+
+        private static List<LibFileRow> SortLibFiles(List<LibFileRow> rows, string sortBy, bool desc)
+        {
+            var key = (sortBy ?? "path").ToLowerInvariant();
+            Comparer<LibFileRow> cmp;
+            switch (key)
+            {
+                case "filename":
+                    cmp = Comparer<LibFileRow>.Create((a, b) => string.Compare(a.FileName, b.FileName, StringComparison.OrdinalIgnoreCase));
+                    break;
+                case "modified":
+                    cmp = Comparer<LibFileRow>.Create((a, b) => string.CompareOrdinal(a.ModifiedAt, b.ModifiedAt));
+                    break;
+                case "size":
+                    cmp = Comparer<LibFileRow>.Create((a, b) => a.SizeBytes.CompareTo(b.SizeBytes));
+                    break;
+                case "path":
+                default:
+                    cmp = Comparer<LibFileRow>.Create((a, b) => string.Compare(a.Path, b.Path, StringComparison.OrdinalIgnoreCase));
+                    break;
+            }
+            var sorted = rows.OrderBy(x => x, cmp).ToList();
+            if (desc) sorted = sorted.AsEnumerable().Reverse().ToList();
+            return sorted;
+        }
+
         // ---------------------------------------------------------------- 改名对照
 
         [HttpGet("Rename")]
