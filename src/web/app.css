@@ -801,3 +801,9 @@
 .cs-lib-meta { color: var(--cs-fg-dim); font-size: 12px; margin-left: auto; }
 
 .cs-hint-inline { color: var(--cs-fg-dim); font-weight: 400; font-size: 12px; }
+
+/* 分节可见性：默认隐藏，radio 选中或脚本加上 is-active 时显示。
+   注意用 :not([hidden]) 之外的优先级保持 [hidden] 仍能生效。 */
+.cs-content > .cs-view { display: none; }
+.cs-content > .cs-view.is-active { display: flex; }
+.cs-content > .cs-view[hidden] { display: none; }

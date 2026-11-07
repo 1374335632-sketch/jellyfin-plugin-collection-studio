@@ -4,19 +4,45 @@
 <meta charset="utf-8" />
 <title>Collection Studio</title>
 <link rel="stylesheet" href="./app.css" />
+<style>
+/* 纯 CSS 分节切换：完全不依赖脚本。宿主即使不执行 <script>，每个分节也能点开。 */
+.cs-radio { position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0; }
+.cs-tabs label.cs-nav-item { cursor: pointer; user-select: none; }
+.cs-content > .cs-view { display: none; }
+#cs-radio-overview:checked ~ .cs-content > #view-overview { display: flex; }
+#cs-radio-rules:checked ~ .cs-content > #view-rules { display: flex; }
+#cs-radio-collections:checked ~ .cs-content > #view-collections { display: flex; }
+#cs-radio-rename:checked ~ .cs-content > #view-rename { display: flex; }
+#cs-radio-backups:checked ~ .cs-content > #view-backups { display: flex; }
+#cs-radio-settings:checked ~ .cs-content > #view-settings { display: flex; }
+#cs-radio-overview:checked ~ .cs-tabs label[for="cs-radio-overview"],
+#cs-radio-rules:checked ~ .cs-tabs label[for="cs-radio-rules"],
+#cs-radio-collections:checked ~ .cs-tabs label[for="cs-radio-collections"],
+#cs-radio-rename:checked ~ .cs-tabs label[for="cs-radio-rename"],
+#cs-radio-backups:checked ~ .cs-tabs label[for="cs-radio-backups"],
+#cs-radio-settings:checked ~ .cs-tabs label[for="cs-radio-settings"] {
+  background: var(--cs-accent-soft); border-color: var(--cs-accent); color: var(--cs-fg); font-weight: 600;
+}
+</style>
 </head>
 <body>
 <div class="cs-page page type-interior" id="csPageRoot" data-role="page" data-cs-root="1">
   <div data-role="content">
     <div class="content-primary">
 
+        <input type="radio" name="cs-tab" class="cs-radio" id="cs-radio-overview" checked />
+        <input type="radio" name="cs-tab" class="cs-radio" id="cs-radio-rules" />
+        <input type="radio" name="cs-tab" class="cs-radio" id="cs-radio-collections" />
+        <input type="radio" name="cs-tab" class="cs-radio" id="cs-radio-rename" />
+        <input type="radio" name="cs-tab" class="cs-radio" id="cs-radio-backups" />
+        <input type="radio" name="cs-tab" class="cs-radio" id="cs-radio-settings" />
       <div class="cs-tabs" id="csNavList" role="tablist" aria-label="Collection Studio">
-        <button type="button" class="cs-nav-item is-active" data-tab="overview" aria-current="page" onclick="if(window.CS){window.CS.nav('overview', this);}">总览</button>
-        <button type="button" class="cs-nav-item" data-tab="rules" onclick="if(window.CS){window.CS.nav('rules', this);}">分类规则</button>
-        <button type="button" class="cs-nav-item" data-tab="collections" onclick="if(window.CS){window.CS.nav('collections', this);}">合集管理</button>
-        <button type="button" class="cs-nav-item" data-tab="rename" onclick="if(window.CS){window.CS.nav('rename', this);}">改名对照</button>
-        <button type="button" class="cs-nav-item" data-tab="backups" onclick="if(window.CS){window.CS.nav('backups', this);}">备份与还原</button>
-        <button type="button" class="cs-nav-item" data-tab="settings" onclick="if(window.CS){window.CS.nav('settings', this);}">设置</button>
+        <label class="cs-nav-item is-active" for="cs-radio-overview" data-tab="overview">总览</label>
+        <label class="cs-nav-item" for="cs-radio-rules" data-tab="rules">分类规则</label>
+        <label class="cs-nav-item" for="cs-radio-collections" data-tab="collections">合集管理</label>
+        <label class="cs-nav-item" for="cs-radio-rename" data-tab="rename">改名对照</label>
+        <label class="cs-nav-item" for="cs-radio-backups" data-tab="backups">备份与还原</label>
+        <label class="cs-nav-item" for="cs-radio-settings" data-tab="settings">设置</label>
       </div>
 
       <div class="cs-title-row">

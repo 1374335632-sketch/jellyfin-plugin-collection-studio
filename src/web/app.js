@@ -523,6 +523,12 @@
     var scope = (root || connectedRoot() || document);
     state.currentTab = tab;
     var navList = scope ? scope.querySelector('#csNavList') : null;
+    // 标签是 <label for=cs-radio-...>，脚本可用时同步选中对应的 radio 输入
+    try {
+      var radio = scope.querySelector('#cs-radio-' + tab) || document.getElementById('cs-radio-' + tab);
+      if (radio) { radio.checked = true; }
+    } catch (ignore) { }
+
     var items = navList ? navList.querySelectorAll('.cs-nav-item') : document.querySelectorAll('.cs-nav-item');
     Array.prototype.forEach.call(items, function (btn) {
       var on = btn.getAttribute('data-tab') === tab;
