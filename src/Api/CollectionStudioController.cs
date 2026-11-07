@@ -78,6 +78,10 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
                 }
                 // 允许同源页面嵌入
                 Response.Headers.Remove("X-Frame-Options");
+                // 禁止缓存：否则升级插件后浏览器仍用旧页面，界面上看不到新功能
+                Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0";
+                Response.Headers["Pragma"] = "no-cache";
+                Response.Headers["Expires"] = "0";
                 return new ContentResult
                 {
                     Content = content,

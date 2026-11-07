@@ -9,6 +9,8 @@ const css = readFileSync(join(web, 'app.css'), 'utf8');
 const js = readFileSync(join(web, 'app.js'), 'utf8');
 const appHtml = readFileSync(join(web, 'index.html'), 'utf8');
 const shellHtml = readFileSync(join(web, 'shell.html'), 'utf8');
+// 用构建时间戳作为 iframe 的缓存键：升级后浏览器不会继续用旧页面
+const stamp = String(Date.now());
 
 // ---------------------------------------------------------------- 完整页面
 // index.html 是一个真正的完整文档：内联样式与脚本，无外部依赖。
@@ -51,7 +53,7 @@ const shellBodyMatch = shellHtml.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
 if (!shellBodyMatch) { throw new Error('shell.html 缺少 <body>'); }
 const shellInner = shellBodyMatch[1].trim();
 
-const page = shellInner + '\n';
+const page = shellInner.replace('CS_VERSION', stamp) + '\n';
 if (!page.includes('pluginConfigurationPage') || !page.includes('data-require')) {
   throw new Error('外壳缺少 Jellyfin 配置页标准属性');
 }

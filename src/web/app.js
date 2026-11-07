@@ -1204,7 +1204,27 @@
       dlg.body.appendChild(summary);
 
       if (!groups.length) {
-        dlg.body.appendChild(el('div', 'cs-empty', '暂无数据：该规则没有命中任何分组'));
+        var hint = el('div', 'cs-empty', '暂无数据：该规则没有命中任何分组');
+        dlg.body.appendChild(hint);
+        // 直接查清原因，不让用户猜
+        getJson('Rules/' + encodeURIComponent(rule.id) + '/Diagnose').then(function (d) {
+          var reason;
+          if (d.indexedTotal === 0) {
+            reason = '索引为空：请到「总览」点「立即扫描」。';
+          } else if (d.afterLibraryFilter === 0) {
+            reason = '规则选定的媒体库与索引中的媒体库不一致（共 ' + d.indexedTotal
+              + ' 条已索引）。请编辑规则重新勾选媒体库。';
+          } else if (d.itemsWithActors === 0 && d.mode !== 'custom') {
+            reason = '已索引 ' + d.indexedTotal + ' 条，但没有一条带人物信息，按演员/导演分组无法产生结果。'
+              + '请在 Jellyfin 中补齐元数据，或改用「厂商 / 类型 / 年份」分组。';
+          } else {
+            reason = '通过媒体库过滤 ' + d.afterLibraryFilter + ' 条、条件过滤 ' + d.afterConditions
+              + ' 条，仍未分出组。请放宽高级条件。';
+          }
+          var box = el('div', 'cs-hint', reason);
+          box.style.marginTop = '10px';
+          dlg.body.appendChild(box);
+        }, function () { });
         return;
       }
 

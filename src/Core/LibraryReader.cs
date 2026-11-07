@@ -7,6 +7,7 @@ using Jellyfin.Data.Enums;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Persistence;
+using System.Reflection;
 using MediaBrowser.Model.Entities;
 
 namespace Jellyfin.Plugin.CollectionStudio.Core
@@ -121,15 +122,82 @@ namespace Jellyfin.Plugin.CollectionStudio.Core
 
         public PersonInfo[] GetPeople(BaseItem item)
         {
+            // 路径一：ILibraryManager.GetPeople（最常用，10.x/12.x 都有）
             try
             {
                 var people = _library.GetPeople(item);
-                return people?.ToArray() ?? Array.Empty<PersonInfo>();
+                if (people != null && people.Count > 0) { return people.ToArray(); }
             }
-            catch
+            catch { }
+
+            // 路径二/三：12.x 上 BaseItem.People / IItemRepository 的签名有差异，
+            // 用反射按「返回集合、元素含 Name 与 Type」的形状兜底，避免依赖具体版本 API。
+            var reflected = TryPeopleByReflection(item);
+            if (reflected.Length > 0) { return reflected; }
+
+            return Array.Empty<PersonInfo>();
+        }
+
+        /// <summary>反射兜底：在 BaseItem 与 People 仓库上寻找可用的取人物方法。</summary>
+        private PersonInfo[] TryPeopleByReflection(BaseItem item)
+        {
+            var targets = new object[] { item, _repo, _library };
+            foreach (var target in targets)
             {
-                return Array.Empty<PersonInfo>();
+                if (target == null) continue;
+                foreach (var m in target.GetType().GetMethods())
+                {
+                    if (m.GetParameters().Length != 1) continue;
+                    if (m.ReturnType == typeof(void)) continue;
+                    var p0 = m.GetParameters()[0].ParameterType;
+                    if (!p0.IsAssignableFrom(typeof(BaseItem)) && !p0.IsAssignableFrom(item.GetType())) continue;
+                    var name = m.Name.ToLowerInvariant();
+                    if (!(name.Contains("people") || name.Contains("person"))) continue;
+                    try
+                    {
+                        var raw = m.Invoke(target, new object[] { item });
+                        var list = raw as System.Collections.IEnumerable;
+                        if (list == null || raw is string) continue;
+                        var outList = new List<PersonInfo>();
+                        foreach (var row in list)
+                        {
+                            if (row == null) continue;
+                            var nameText = ReadStringProp(row, "Name");
+                            var typeText = ReadStringProp(row, "Type") ?? ReadStringProp(row, "PersonType");
+                            var role = ReadStringProp(row, "Role");
+                            if (string.IsNullOrWhiteSpace(nameText)) continue;
+                            outList.Add(new PersonInfo
+                            {
+                                Name = nameText,
+                                Type = ParsePersonKind(typeText),
+                                Role = role
+                            });
+                        }
+                        if (outList.Count > 0) { return outList.ToArray(); }
+                    }
+                    catch { }
+                }
             }
+            return Array.Empty<PersonInfo>();
+        }
+
+        private static string ReadStringProp(object obj, string prop)
+        {
+            try
+            {
+                var p = obj.GetType().GetProperty(prop);
+                if (p == null) return null;
+                var v = p.GetValue(obj);
+                return v == null ? null : v.ToString();
+            }
+            catch { return null; }
+        }
+
+        private static PersonKind ParsePersonKind(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return PersonKind.Unknown;
+            try { return (PersonKind)Enum.Parse(typeof(PersonKind), text, true); }
+            catch { return PersonKind.Unknown; }
         }
 
         public IndexItemDoc ToDoc(BaseItem item)
