@@ -135,13 +135,26 @@
   function authToken() {
     var c = apiClientRef();
     if (c && typeof c.accessToken === 'function') {
-      var v = c.accessToken();
-      if (v) { return String(v); }
+      try { var v = c.accessToken(); if (v) { return String(v); } } catch (e) { }
     }
     var t = tokenFromQuery();
     if (t) { return t; }
     t = tokenFromStorage();
     if (t) { return t; }
+    // iframe 同源：直接读父窗口与自身 localStorage（Jellyfin 把凭据存这里）
+    try {
+      var parentLs = window.parent && window.parent !== window ? window.parent.localStorage : null;
+      if (parentLs) {
+        for (var i = 0; i < parentLs.length; i++) {
+          var k = parentLs.key(i);
+          var raw = k ? parentLs.getItem(k) : null;
+          if (!raw) { continue; }
+          if (/^[0-9a-f]{32}$/i.test(raw.trim())) { return raw.trim(); }
+          if (raw.indexOf('AccessToken') < 0 && raw.indexOf('accessToken') < 0) { continue; }
+          try { var tt = findTokenDeep(JSON.parse(raw), 0); if (tt) { return tt; } } catch (e) { }
+        }
+      }
+    } catch (e) { }
     try { return localStorage.getItem('cs_token') || ''; } catch (e) { return ''; }
   }
 

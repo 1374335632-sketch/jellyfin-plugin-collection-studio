@@ -50,6 +50,47 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
             WriteIndented = false
         };
 
+        // ---------------------------------------------------------------- 完整页面
+
+        /// <summary>
+        /// 返回完整 HTML 文档，供配置页里的 iframe 加载。
+        /// 配置页本身被控制台以「视图」注入，注入内容中的脚本不会执行；
+        /// iframe 加载的是独立文档，脚本正常执行，因此所有按钮与数据加载都可用。
+        /// </summary>
+        [HttpGet("/CollectionStudio/Full")]
+        [AllowAnonymous]
+        [Produces("text/html")]
+        public ActionResult GetFullPage()
+        {
+            try
+            {
+                var asm = typeof(Plugin).Assembly;
+                var resource = typeof(Plugin).Namespace + ".web.full.html";
+                using var stream = asm.GetManifestResourceStream(resource);
+                if (stream == null) return Error(500, "页面资源缺失：" + resource);
+                using var reader = new StreamReader(stream, System.Text.Encoding.UTF8);
+                var content = reader.ReadToEnd();
+                if (!content.TrimStart().StartsWith("<!", StringComparison.Ordinal))
+                {
+                    content = "<!doctype html>\n<html lang=\"zh-CN\">\n<head><meta charset=\"utf-8\" /></head>\n<body>\n"
+                        + content + "\n</body>\n</html>\n";
+                }
+                // 允许同源页面嵌入
+                Response.Headers.Remove("X-Frame-Options");
+                return new ContentResult
+                {
+                    Content = content,
+                    ContentType = "text/html; charset=utf-8",
+                    StatusCode = 200
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "读取完整页面失败");
+                return Error(500, ex.Message);
+            }
+        }
+
         // ---------------------------------------------------------------- 状态
 
         [HttpGet("Status")]
