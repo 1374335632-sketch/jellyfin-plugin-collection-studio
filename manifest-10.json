@@ -15,6 +15,14 @@
         "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/dist/Jellyfin.Plugin.CollectionStudio-3.0.0.1-net9.0.zip",
         "checksum": "c620a5a6319b77b52b265c67416e75e2",
         "timestamp": "2026-11-07T11:45:00Z"
+      },
+      {
+        "version": "2.1.0.1",
+        "changelog": "",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/dist/Jellyfin.Plugin.CollectionStudio-2.1.0.1-net9.0.zip",
+        "checksum": "11f984286a662cd1171bfcc10824117f",
+        "timestamp": "2026-11-07T10:50:00Z"
       }
     ]
   }
