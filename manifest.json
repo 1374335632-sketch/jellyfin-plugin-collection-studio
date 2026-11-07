@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "4.1.0.1",
+        "changelog": "",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/jellyfin-10/dist/Jellyfin.Plugin.CollectionStudio-4.1.0.1-net9.0.zip",
+        "checksum": "f9c2a2913b91f83f7ca51992ef3a0fb7",
+        "timestamp": "2026-11-07T14:55:00Z"
+      },
+      {
         "version": "4.0.0.1",
         "changelog": "",
         "targetAbi": "10.11.0.0",
