@@ -23,15 +23,15 @@ const LINES = [
   { tfm: 'net8.0', abi: '10.9.0.0', manifest: 'manifest-109.json', note: 'Jellyfin 10.9' }
 ];
 
-const CHANGELOG = {
-  '1.0.0': '首个版本：按演员/导演/厂商/类型/年份/复杂条件生成合集，支持刮削写真封面、改名对照表、Excel 导出与备份还原。',
-  '1.1': '设置页改为 Jellyfin 控制台内部页面（不再接管整页）；分类规则新增「参与分类的媒体库」选择；适配 Jellyfin 12.4 授权方式。'
-};
+// 版本更新日志：按主次版本号（如 4.5）读取 tools/changelog.json，缺省为空
+const CHANGELOG = JSON.parse(readFileSync(join(here, 'changelog.json'), 'utf8'));
 
 function changelogFor(version) {
-  const major = version.split('.').slice(0, 2).join('.');
-  return CHANGELOG[major] || '';
+  const v = String(version || '');
+  const major = v.split('.').slice(0, 2).join('.');
+  return CHANGELOG[major] || CHANGELOG[v] || '';
 }
+
 
 // 扫 dist/ 里属于本条产品线的所有包，按版本号降序
 function collectVersions(tfm) {
