@@ -840,6 +840,44 @@ namespace Jellyfin.Plugin.CollectionStudio.Api
         }
 
         /// <summary>清理失效的合集记录：Jellyfin 里已不存在的合集，同步从表格中移除。</summary>
+        /// <summary>
+        /// 一键删除全部合集记录。不依赖前端传入 id，直接遍历插件库里的所有合集。
+        /// 只移除合集条目，绝不删除媒体文件（DeleteFileLocation = false）。
+        /// </summary>
+        [HttpPost("Collections/DeleteAll")]
+        public ActionResult DeleteAllCollections()
+        {
+            using var store = Open();
+            var docs = store.Collections.FindAll().ToList();
+            if (docs.Count == 0) return Ok(new { ok = true, deletedCount = 0, failed = new List<object>() });
+
+            try { store.Backup(Plugin.Instance?.Name ?? "Collection Studio", "predelete", "一键删除全部合集前备份（" + docs.Count + " 个）"); }
+            catch (Exception ex) { _logger.LogWarning("删除全部前备份失败：{Message}", ex.Message); }
+
+            var deleted = 0;
+            var failed = new List<object>();
+            foreach (var doc in docs)
+            {
+                try
+                {
+                    var box = ResolveBoxSet(doc.Id);
+                    if (box != null)
+                    {
+                        _library.DeleteItem(box, new DeleteOptions { DeleteFileLocation = false, DeleteFromExternalProvider = false });
+                    }
+                    store.Collections.Delete(doc.Id);
+                    deleted++;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "删除合集 {Id} 失败", doc.Id);
+                    failed.Add(new { id = doc.Id, name = doc.Name, message = ex.Message });
+                }
+            }
+
+            return Ok(new { ok = true, deletedCount = deleted, failed, total = docs.Count });
+        }
+
         [HttpPost("Collections/Prune")]
         public ActionResult PruneCollections()
         {

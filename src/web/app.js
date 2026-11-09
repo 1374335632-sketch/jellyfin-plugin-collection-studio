@@ -427,9 +427,23 @@
     var api = {
       dialog: dialog, body: body, foot: foot, title: title, close: close,
       setTitle: function (t) { title.textContent = t; },
+      // 替换正文内容。多处调用点都用 dlg.setBody(...)，缺了它一律抛 TypeError，
+      // 表现为「点了按钮没任何反应」。
+      setBody: function (nodes) {
+        clear(body);
+        if (nodes === undefined || nodes === null) { return; }
+        if (nodes.nodeType) { body.appendChild(nodes); return; }
+        if (Object.prototype.toString.call(nodes) === '[object Array]') {
+          nodes.forEach(function (n) { if (n) { body.appendChild(n); } });
+          return;
+        }
+        body.appendChild(nodes);
+      },
+      // 追加正文内容，便于边加载边渲染
+      appendBody: function (node) { if (node) { body.appendChild(node); } return node; },
       setFooter: function (nodes) {
         clear(foot);
-        (nodes || []).forEach(function (n) { foot.appendChild(n); });
+        (nodes || []).forEach(function (n) { if (n) { foot.appendChild(n); } });
       }
     };
 
@@ -910,6 +924,7 @@
       tr.appendChild(opsCell);
       tbody.appendChild(tr);
     });
+    syncCheckAllHeader();
   }
 
   // 规则限定的媒体库摘要
@@ -1598,6 +1613,7 @@
       cb.type = 'checkbox';
       cb.className = 'cs-row-check';
       cb.value = c.id;
+      cb.addEventListener('change', syncCheckAllHeader);
       checkCell.appendChild(cb);
       tr.appendChild(checkCell);
 
@@ -1632,28 +1648,102 @@
     return out;
   }
 
+  // 合集的勾选与批量删除
+  function collectionChecks() {
+    var box = $('colListBody');
+    if (!box) { return []; }
+    return Array.prototype.slice.call(box.querySelectorAll('input.cs-row-check'));
+  }
+
+  function setAllChecks(checked) {
+    collectionChecks().forEach(function (cb) { cb.checked = checked; });
+    syncCheckAllHeader();
+  }
+
+  // 表头复选框跟随正文状态（全选/部分/未选）
+  function syncCheckAllHeader() {
+    var head = $('colCheckAll');
+    if (!head) { return; }
+    var all = collectionChecks();
+    var checkedCount = all.filter(function (cb) { return cb.checked; }).length;
+    head.checked = all.length > 0 && checkedCount === all.length;
+    head.indeterminate = checkedCount > 0 && checkedCount < all.length;
+  }
+
+  function toggleSelectAll() {
+    var all = collectionChecks();
+    if (!all.length) { toast('当前没有可选的合集', 'error'); return; }
+    var allChecked = all.every(function (cb) { return cb.checked; });
+    setAllChecks(!allChecked);
+  }
+
   function bulkDeleteCollections() {
     var ids = selectedCollectionIds();
     if (!ids.length) { toast('请先勾选要删除的合集', 'error'); return; }
-    var dlg = openDialog({ title: '删除选中合集（' + ids.length + ' 个）' });
+    confirmDeleteCollections(ids, '删除选中合集（' + ids.length + ' 个）');
+  }
+
+  function deleteAllCollections() {
+    var count = (state.collections || []).length;
+    if (!count) { toast('当前没有合集可删除', 'error'); return; }
+    // 走服务端全删接口：不依赖前端 id 列表，避免分页/筛选导致漏删
+    var dlg = openDialog({ title: '一键删除全部合集（' + count + ' 个）' });
     var body = el('div', 'cs-form');
     dlg.setBody(body);
-    body.appendChild(el('p', 'cs-hint', '只移除合集条目，不会删除任何媒体文件。删除前会自动备份。'));
+    body.appendChild(el('p', 'cs-hint', '将删除插件库中的全部合集记录，并在删除前自动备份一次。'));
+    body.appendChild(el('p', 'cs-hint', '只移除合集条目，绝不会删除任何媒体文件。'));
     var actions = el('div', 'cs-actions');
     actions.appendChild(makeButton('取消', 'cs-btn-sm', function () { dlg.close(); }));
-    actions.appendChild(makeButton('确认删除', 'cs-btn-sm cs-btn-danger', function () {
+    actions.appendChild(makeButton('确认全部删除', 'cs-btn-sm cs-btn-danger', function () {
       dlg.close();
-      sendJson('POST', 'Collections/BulkDelete', { ids: ids }).then(function (res) {
-        toast('已删除 ' + (res.deletedCount || 0) + ' 个合集');
-        if (res.failed && res.failed.length) { toast(res.failed.length + ' 个删除失败', 'error'); }
+      var tbody = $('colListBody');
+      tableMessage(tbody, '正在删除全部合集…', 7);
+      sendJson('POST', 'Collections/DeleteAll', {}).then(function (res) {
+        var del = (res.deletedCount !== undefined) ? res.deletedCount : (res.DeletedCount || 0);
+        var failed = res.failed || res.Failed || [];
+        toast('已删除 ' + del + ' 个合集' + (failed.length ? ('，' + failed.length + ' 个失败') : ''));
         loadCollections();
       }, function (err) {
-        toast('批量删除失败：' + (err && err.body ? err.body : ''), 'error');
+        tableMessage(tbody, '删除失败', 7);
+        toast('一键删除失败：' + (err && err.body ? String(err.body).slice(0, 200) : ''), 'error');
       });
     }));
     body.appendChild(actions);
   }
 
+  function confirmDeleteCollections(ids, title) {
+    var dlg = openDialog({ title: title });
+    var body = el('div', 'cs-form');
+    dlg.setBody(body);
+    body.appendChild(el('p', 'cs-hint', '只移除合集条目，绝不会删除任何媒体文件。删除前会自动备份一次。'));
+    body.appendChild(el('p', 'cs-hint', '将删除 ' + ids.length + ' 个合集，此操作不可撤销（可从备份还原）。'));
+    var actions = el('div', 'cs-actions');
+    actions.appendChild(makeButton('取消', 'cs-btn-sm', function () { dlg.close(); }));
+    actions.appendChild(makeButton('确认删除', 'cs-btn-sm cs-btn-danger', function () {
+      dlg.close();
+      doDeleteCollections(ids);
+    }));
+    body.appendChild(actions);
+  }
+
+  function doDeleteCollections(ids) {
+    var tbody = $('colListBody');
+    tableMessage(tbody, '正在删除 ' + ids.length + ' 个合集…', 7);
+    sendJson('POST', 'Collections/BulkDelete', { ids: ids }).then(function (res) {
+      var del = (res.deletedCount !== undefined) ? res.deletedCount : (res.DeletedCount || 0);
+      var failed = res.failed || res.Failed || [];
+      toast('已删除 ' + del + ' 个合集' + (failed.length ? ('，' + failed.length + ' 个失败') : ''));
+      if (failed.length) {
+        var first = failed[0];
+        toast('首个失败原因：' + (first.message || first.Message || '未知'), 'error');
+      }
+      // 删除后立即重新拉取，确保表格与实际一致
+      loadCollections();
+    }, function (err) {
+      tableMessage(tbody, '删除失败', 7);
+      toast('批量删除失败：' + (err && err.body ? String(err.body).slice(0, 200) : (err && err.message ? err.message : '')), 'error');
+    });
+  }
   function pruneCollections() {
     sendJson('POST', 'Collections/Prune', {}).then(function (res) {
       toast('已清理 ' + (res.removed || 0) + ' 条失效记录，剩余 ' + (res.remaining || 0) + ' 个合集');
@@ -2714,14 +2804,9 @@
     safeOn('colRefreshBtn', 'click', loadCollections);
     safeOn('colBulkDeleteBtn', 'click', bulkDeleteCollections);
     safeOn('colPruneBtn', 'click', pruneCollections);
-    safeOn('colSelectAllBtn', 'click', function () {
-      var box = $('colListBody');
-      if (!box) { return; }
-      var all = box.querySelectorAll('input.cs-row-check');
-      var anyUnchecked = false;
-      Array.prototype.forEach.call(all, function (cb) { if (!cb.checked) { anyUnchecked = true; } });
-      Array.prototype.forEach.call(all, function (cb) { cb.checked = anyUnchecked; });
-    });
+    safeOn('colSelectAllBtn', 'click', toggleSelectAll);
+    safeOn('colDeleteAllBtn', 'click', deleteAllCollections);
+    safeOn('colCheckAll', 'change', function () { setAllChecks(!!$('colCheckAll').checked); });
 
     var filterTimer = null;
     safeOn('rnFilter', 'input', function () {

@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "5.2.0.1",
+        "changelog": "修复合集管理的全选与批量删除：弹窗对象缺少 setBody 方法导致所有确认按钮点击即抛异常（表现为点了没反应），现已补全并新增 appendBody；全选按钮与表头复选框统一走同一套逻辑并同步 indeterminate 状态；新增「一键删除全部」按钮与 POST /CollectionStudio/Collections/DeleteAll 服务端全删接口（不依赖前端 id 列表，删除前自动备份，DeleteFileLocation=false 绝不删媒体文件）；补齐缺失的「检查写权限」按钮",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/main/dist/Jellyfin.Plugin.CollectionStudio-5.2.0.1-net9.0.zip",
+        "checksum": "b5dd3bfcae1a49c5c9bf13a50bda0db3",
+        "timestamp": "2026-11-08T01:45:00Z"
+      },
+      {
         "version": "5.1.0.1",
         "changelog": "写权限检查改为读取容器内 /proc/mounts，判定每个目录实际所在挂载点与真实只读状态，并说明 Docker 的 RW=true 只是 bind 参数、不代表底层文件系统可写。",
         "targetAbi": "10.11.0.0",
