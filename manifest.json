@@ -9,8 +9,16 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "5.2.0.2",
+        "changelog": "修复合集管理的全选与批量删除：弹窗对象缺少 setBody 方法导致所有确认按钮点击即抛异常（表现为点了没反应），现已补全并新增 appendBody；全选按钮与表头复选框统一走同一套逻辑并同步 indeterminate 状态；新增「一键删除全部」按钮与 POST /CollectionStudio/Collections/DeleteAll 服务端全删接口（不依赖前端 id 列表，删除前自动备份，DeleteFileLocation=false 绝不删媒体文件）；补齐缺失的「检查写权限」按钮",
+        "targetAbi": "12.4.0.0",
+        "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/jellyfin-12/dist/Jellyfin.Plugin.CollectionStudio-5.2.0.2-net10.0.zip",
+        "checksum": "5f926fc653f8fabe192a0a71c58ed515",
+        "timestamp": "2026-11-08T02:00:00Z"
+      },
+      {
         "version": "5.1.0.2",
-        "changelog": "",
+        "changelog": "写权限检查改为读取容器内 /proc/mounts，判定每个目录实际所在挂载点与真实只读状态，并说明 Docker 的 RW=true 只是 bind 参数、不代表底层文件系统可写。",
         "targetAbi": "12.4.0.0",
         "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/jellyfin-12/dist/Jellyfin.Plugin.CollectionStudio-5.1.0.2-net10.0.zip",
         "checksum": "00f21b4963bfff6712cd9934cb511afd",
@@ -18,7 +26,7 @@
       },
       {
         "version": "5.0.0.2",
-        "changelog": "",
+        "changelog": "新增「检查写权限」：对媒体库实际目录做真实写入测试，明确判定只读挂载 / 无写权限 / 目录不存在并给出宿主机可执行的处理命令；结果说明列改为可换行显示全文，不再被省略号截断。",
         "targetAbi": "12.4.0.0",
         "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/jellyfin-12/dist/Jellyfin.Plugin.CollectionStudio-5.0.0.2-net10.0.zip",
         "checksum": "357318b514cca68339fe9d62d46d5141",
@@ -26,7 +34,7 @@
       },
       {
         "version": "4.9.0.2",
-        "changelog": "",
+        "changelog": "结果说明改为累加（移动失败不再覆盖名称写入与刮削的结果），并汇总「Jellyfin 名称已改 / 磁盘文件已改 / 已排队刮削」三件事各自是否完成。",
         "targetAbi": "12.4.0.0",
         "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/jellyfin-12/dist/Jellyfin.Plugin.CollectionStudio-4.9.0.2-net10.0.zip",
         "checksum": "70785d52850cb71e38242d35c9ef42ae",
@@ -34,7 +42,7 @@
       },
       {
         "version": "4.8.0.2",
-        "changelog": "",
+        "changelog": "修复刮削失败「无法构造 MetadataRefreshOptions」：该类型命名空间是 MediaBrowser.Controller.Providers（此前写成 .Entities），且构造必须传 IDirectoryService（现从容器注入），并设置 ReplaceAllMetadata/ForceSave 强制全量重刷；磁盘改名失败时对 Read-only file system / Permission denied 给出可执行的排查提示。",
         "targetAbi": "12.4.0.0",
         "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/jellyfin-12/dist/Jellyfin.Plugin.CollectionStudio-4.8.0.2-net10.0.zip",
         "checksum": "68dbbf438205f6763c3a94feb8425415",
@@ -42,7 +50,7 @@
       },
       {
         "version": "4.7.0.2",
-        "changelog": "",
+        "changelog": "修复两条：① 搜索失效——媒体库文件清单统一从界面读取筛选/媒体库/每页状态，不再被重置覆盖；② 两个开关各自独立判断是否需改动（此前只看 Jellyfin 名称，名称恰好相同时连磁盘文件也被跳过）。语义确认：两个开关均以磁盘文件名为匹配基准。",
         "targetAbi": "12.4.0.0",
         "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/jellyfin-12/dist/Jellyfin.Plugin.CollectionStudio-4.7.0.2-net10.0.zip",
         "checksum": "ea06ef1570b7351425cacd13a1b8d967",
@@ -50,7 +58,7 @@
       },
       {
         "version": "4.6.0.2",
-        "changelog": "",
+        "changelog": "修复「同时重命名磁盘文件」不起作用：三个开关改为随执行请求一起提交（不再依赖先点保存），后端以请求体为准；物理改名失败会返回具体原因（路径为空/文件不在/目录不可访问/目标已存在/移动异常）并写入结果表格与日志；预演明确列出是否改磁盘文件及改前改后文件名。",
         "targetAbi": "12.4.0.0",
         "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/jellyfin-12/dist/Jellyfin.Plugin.CollectionStudio-4.6.0.2-net10.0.zip",
         "checksum": "99e97e6c17a2b4e2450ea7a782a4b2ef",
@@ -58,7 +66,7 @@
       },
       {
         "version": "4.5.0.2",
-        "changelog": "",
+        "changelog": "正则规则支持捕获组提取：替换文本留空时自动取第一个非空捕获组，也可用 $1/$2/${name} 指定，无需填写任何字面替换文本。例 (MAXING)(6666-1105) 用 \\((6666-[0-9-]+)\\): 即可得到 6666-1105。",
         "targetAbi": "12.4.0.0",
         "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/jellyfin-12/dist/Jellyfin.Plugin.CollectionStudio-4.5.0.2-net10.0.zip",
         "checksum": "eecc4ff9377d583a30e3922cd9ffb413",
@@ -66,7 +74,7 @@
       },
       {
         "version": "4.4.0.2",
-        "changelog": "",
+        "changelog": "设置页新增「媒体库文件清单」表：磁盘路径 / 磁盘影片名称 / 修改日期 / 大小，四列表头均可正序倒序，实时读磁盘，并标出文件名与 Jellyfin 名称不一致的条目。",
         "targetAbi": "12.4.0.0",
         "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/jellyfin-12/dist/Jellyfin.Plugin.CollectionStudio-4.4.0.2-net10.0.zip",
         "checksum": "1590039701ab74db1ea59ab1a4f47849",
@@ -74,7 +82,7 @@
       },
       {
         "version": "4.3.0.2",
-        "changelog": "",
+        "changelog": "重命名与刮削拆成独立操作（只改名 / 只刮削 / 两者依次）；源名称改取媒体库影片的实际磁盘文件名，写入的是 Jellyfin 影片名称；重命名卡片增加媒体库选择；修复预演返回 undefined（PascalCase 与 camelCase 双写兼容）。",
         "targetAbi": "12.4.0.0",
         "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/jellyfin-12/dist/Jellyfin.Plugin.CollectionStudio-4.3.0.2-net10.0.zip",
         "checksum": "7253fb3b84a46835c9ad5bee17371499",
@@ -82,7 +90,7 @@
       },
       {
         "version": "4.2.0.2",
-        "changelog": "",
+        "changelog": "修复预演/执行返回 HTTP 400：Rename/Run 与 Rename/Test 改为 JsonElement 手动宽松解析（不再在模型绑定阶段失败，字段大小写都能接受）；前端把服务端 errors/error 原文解析并显示在结果表格。",
         "targetAbi": "12.4.0.0",
         "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/jellyfin-12/dist/Jellyfin.Plugin.CollectionStudio-4.2.0.2-net10.0.zip",
         "checksum": "7cb53b7470edf9c2a30a9ee30f88f2ab",
@@ -90,7 +98,7 @@
       },
       {
         "version": "4.1.0.2",
-        "changelog": "",
+        "changelog": "修复全表格文字看不清：插件页此前没有自己的背景层，文字颜色只能靠宿主主题推断；现为 html/body/页面/卡片/表格/输入/弹窗设定完整背景与前景，并按宿主背景亮度自动选择深浅主题。",
         "targetAbi": "12.4.0.0",
         "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/jellyfin-12/dist/Jellyfin.Plugin.CollectionStudio-4.1.0.2-net10.0.zip",
         "checksum": "bfc28ba610461613d06eb3b827f7fdef",
@@ -98,7 +106,7 @@
       },
       {
         "version": "4.0.0.2",
-        "changelog": "",
+        "changelog": "新增重命名复原（按批次回滚磁盘文件名与 Jellyfin 名称）；合集一键批量删除（不删媒体文件）+ 失效记录自动清理 + 进页自动刷新；改名对照表头点击排序；刮削源一键添加；按钮与标签高对比修复；定时任务可自定义每日启动时间（跨 10.9/10.11/12.4 反射兼容）。",
         "targetAbi": "12.4.0.0",
         "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/jellyfin-12/dist/Jellyfin.Plugin.CollectionStudio-4.0.0.2-net10.0.zip",
         "checksum": "8bc76463e7dedda97277f96c747bf01e",
@@ -106,7 +114,7 @@
       },
       {
         "version": "3.1.0.2",
-        "changelog": "",
+        "changelog": "源名称替换只依据影片源名称，移除规则里多余的「仅路径包含」筛选条件（界面与引擎同步移除）。",
         "targetAbi": "12.4.0.0",
         "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/jellyfin-12/dist/Jellyfin.Plugin.CollectionStudio-3.1.0.2-net10.0.zip",
         "checksum": "8088ef92b9a421efbefc913cc94e2f04",
@@ -114,7 +122,7 @@
       },
       {
         "version": "3.0.0.2",
-        "changelog": "",
+        "changelog": "新增源名称替换规则：刮削前按规则改写名称，支持正则与 * 通配（例 1561684@vvvv-66 配 *@: 得到 vvvv-66）；执行顺序固定为 重命名→写入名称→触发刮削；内置侵入式操作记录供复原。",
         "targetAbi": "12.4.0.0",
         "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/jellyfin-12/dist/Jellyfin.Plugin.CollectionStudio-3.0.0.2-net10.0.zip",
         "checksum": "8248956312f2f5b9ef12b58b512247cd",
@@ -122,7 +130,7 @@
       },
       {
         "version": "2.1.0.2",
-        "changelog": "",
+        "changelog": "三处修复：Full 端点加 no-store 防缓存并用构建时间戳作为 iframe 缓存键，升级后界面立即更新；人物信息改用反射多路径兜底（12.4 的 BaseItem/IItemRepository 签名与 10.x 不同）；预演/执行为 0 时直接显示具体原因。",
         "targetAbi": "12.4.0.0",
         "sourceUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/1374335632-sketch/jellyfin-plugin-collection-studio/jellyfin-12/dist/Jellyfin.Plugin.CollectionStudio-2.1.0.2-net10.0.zip",
         "checksum": "68738e50da0c2256019e45cb78854b92",
